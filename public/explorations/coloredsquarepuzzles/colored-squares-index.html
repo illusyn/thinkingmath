@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Colored Squares</title>
+<title>Color Tiles</title>
 <style>
 /* ===== PRINT COLOR SUPPORT ===== */
 * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; box-sizing: border-box; }
@@ -13,12 +13,12 @@ body {
   margin: 0; padding: 16px;
   min-height: 100vh;
   display: flex; align-items: center; justify-content: center;
-  background: #111 url('background.jpg') center/cover no-repeat fixed;
+  background: #111;
   font-family: 'DM Sans', 'Avenir', 'Segoe UI', sans-serif;
   user-select: none; -webkit-user-select: none;
 }
 #app { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 440px; }
-h1.title { color: #1a1a2e; font-size: 28px; font-weight: 800; letter-spacing: 8px; margin: 0 0 16px; text-shadow: 0 1px 3px rgba(255,255,255,0.6); }
+h1.title { color: #eee; font-size: 28px; font-weight: 800; letter-spacing: 8px; margin: 0 0 16px; }
 
 /* ===== PANELS ===== */
 .panel { width: 100%; border-radius: 14px; background: #fff; border: 1px solid #e0e0e0; margin-bottom: 20px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
@@ -58,7 +58,7 @@ h1.title { color: #1a1a2e; font-size: 28px; font-weight: 800; letter-spacing: 8p
 .add-rule-btn { align-self: flex-start; padding: 6px 14px; border-radius: 6px; border: 1px dashed #ccc; background: transparent; color: #888; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 4px; }
 
 /* ===== SOLVED ===== */
-.solved-banner { background: rgba(46,213,115,0.2); border: 1px solid rgba(46,213,115,0.5); border-radius: 10px; padding: 10px 24px; margin-bottom: 16px; color: #1a8a45; font-size: 16px; font-weight: 800; letter-spacing: 6px; display: none; gap: 10px; align-items: center; backdrop-filter: blur(4px); }
+.solved-banner { background: linear-gradient(135deg, rgba(46,213,115,0.15), rgba(46,213,115,0.05)); border: 1px solid rgba(46,213,115,0.3); border-radius: 10px; padding: 10px 24px; margin-bottom: 16px; color: #2ed573; font-size: 16px; font-weight: 800; letter-spacing: 6px; display: none; gap: 10px; align-items: center; }
 .solved-banner.show { display: flex; }
 
 /* ===== GRID ===== */
@@ -71,10 +71,10 @@ h1.title { color: #1a1a2e; font-size: 28px; font-weight: 800; letter-spacing: 8p
 
 /* ===== BOTTOM BUTTONS ===== */
 .btn-row { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; justify-content: center; }
-.btn { padding: 10px 20px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.12); background: rgba(255,255,255,0.75); color: #444; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; backdrop-filter: blur(4px); }
-.btn:hover { background: rgba(255,255,255,0.9); }
-.btn-check { background: rgba(46,213,115,0.15); border-color: rgba(46,213,115,0.4); color: #1a8a45; }
-.btn-print { background: rgba(69,123,157,0.15); border-color: rgba(69,123,157,0.4); color: #3a6a8a; }
+.btn { padding: 10px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: #ccc; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
+.btn:hover { background: rgba(255,255,255,0.14); }
+.btn-check { background: rgba(46,213,115,0.12); border-color: rgba(46,213,115,0.3); color: #2ed573; }
+.btn-print { background: rgba(69,123,157,0.15); border-color: rgba(69,123,157,0.3); color: #6BA3C7; }
 
 /* ===== MODALS ===== */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; }
@@ -105,14 +105,6 @@ h1.title { color: #1a1a2e; font-size: 28px; font-weight: 800; letter-spacing: 8p
 .print-preview .pp-btn { padding: 10px 24px; border-radius: 10px; border: 1px solid #ddd; background: #f5f5f5; color: #555; font-size: 14px; font-weight: 700; letter-spacing: 1px; cursor: pointer; }
 .print-preview .pp-btn-print { background: #457B9D; border-color: #457B9D; color: #fff; }
 
-/* ===== EDIT MODE ===== */
-.edit-only { display: none !important; }
-body.edit-mode .edit-only { display: flex !important; }
-button.edit-only { display: none !important; }
-body.edit-mode button.edit-only { display: inline-block !important; }
-.edit-badge { position: fixed; top: 12px; right: 12px; background: #E63946; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 2px; padding: 4px 10px; border-radius: 6px; z-index: 9999; display: none; }
-body.edit-mode .edit-badge { display: block; }
-
 /* ===== PRINT MEDIA ===== */
 @media print {
   body { background: #fff !important; padding: 20px !important; display: block !important; }
@@ -133,8 +125,7 @@ body.edit-mode .edit-badge { display: block; }
 <body>
 
 <div id="app">
-  <h1 class="title">COLORED SQUARES</h1>
-  <div class="edit-badge">EDIT MODE</div>
+  <h1 class="title">COLOR TILES</h1>
 
   <!-- Notation -->
   <div class="panel">
@@ -174,7 +165,7 @@ body.edit-mode .edit-badge { display: block; }
       <div class="divider"></div>
       <div class="section-label">RULES</div>
       <div id="rules-col" class="rules-col"></div>
-      <button class="add-rule-btn edit-only" onclick="addRule()">+ Add Rule</button>
+      <button class="add-rule-btn" onclick="addRule()">+ Add Rule</button>
     </div>
   </div>
 
@@ -193,10 +184,9 @@ body.edit-mode .edit-badge { display: block; }
   <div class="btn-row">
     <button class="btn" onclick="shuffle()">Shuffle</button>
     <button class="btn btn-check" id="check-btn" onclick="toggleCheck()">Check</button>
-    <button class="btn edit-only" onclick="showModal('save')">Save</button>
-    <button class="btn" onclick="document.getElementById('file-input').click()">Load</button>
-    <input type="file" id="file-input" accept=".json" style="display:none" onchange="loadFile(event)">
-    <button class="btn btn-print" onclick="doPrint()">Print</button>
+    <button class="btn" onclick="showModal('save')">Save</button>
+    <button class="btn" onclick="showModal('load')">Load</button>
+    <button class="btn btn-print" onclick="showPrintPreview()">Print</button>
   </div>
 </div>
 
@@ -257,23 +247,8 @@ let rules = [
 ];
 let tiles = [];
 let checking = false;
-let editMode = false;
 
 function nextColor(c) { return COLORS[(COLORS.indexOf(c)+1)%3]; }
-
-function rememberPuzzle() {
-  try { localStorage.setItem('csq_last', JSON.stringify({counts, rules})); } catch(e){}
-}
-
-function recallPuzzle() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('csq_last'));
-    if (saved && saved.counts && saved.rules) {
-      counts = saved.counts;
-      rules = saved.rules;
-    }
-  } catch(e){}
-}
 
 function buildTiles() {
   tiles = [];
@@ -309,24 +284,16 @@ function checkTile(idx) {
 function renderCounts() {
   const row = document.getElementById('counts-row');
   const total = Object.values(counts).reduce((a,b)=>a+b,0);
-  row.innerHTML = Object.entries(counts).map(([c,n]) => {
-    if (editMode) {
-      return `<div class="count-chip">
-        <button class="sm-btn" onclick="adjustCount('${c}',-1)">−</button>
-        <span class="count-dot" style="background:${PAL[c].bg}"></span>
-        <span class="count-name">${CNAME[c]}</span>
-        <span class="count-num">${n}</span>
-        <button class="sm-btn" onclick="adjustCount('${c}',1)">+</button>
-      </div>`;
-    } else {
-      return `<div class="count-chip">
-        <span class="count-dot" style="background:${PAL[c].bg}"></span>
-        <span class="count-name">${CNAME[c]}</span>
-        <span class="count-num">×${n}</span>
-      </div>`;
-    }
-  }).join('');
-  document.getElementById('total-row').textContent = editMode ? `Total: ${total} / ${TOTAL}` : '';
+  row.innerHTML = Object.entries(counts).map(([c,n]) => `
+    <div class="count-chip">
+      <button class="sm-btn" onclick="adjustCount('${c}',-1)">−</button>
+      <span class="count-dot" style="background:${PAL[c].bg}"></span>
+      <span class="count-name">${CNAME[c]}</span>
+      <span class="count-num">${n}</span>
+      <button class="sm-btn" onclick="adjustCount('${c}',1)">+</button>
+    </div>
+  `).join('');
+  document.getElementById('total-row').textContent = `Total: ${total} / ${TOTAL}`;
 }
 
 function makeArrowHTML(crossed, clickable, clickAction) {
@@ -344,31 +311,21 @@ function makeSqHTML(color, clickable, clickAction) {
 function renderRules() {
   const col = document.getElementById('rules-col');
   col.innerHTML = rules.map((r,i) => {
-    if (editMode) {
-      let countHTML = '';
-      if (!r.not) {
-        countHTML = `
-          <button class="tiny-btn" onclick="adjustRuleCount(${i},-1)">−</button>
-          <span class="rule-count">${r.count}</span>
-          <button class="tiny-btn" onclick="adjustRuleCount(${i},1)">+</button>
-        `;
-      }
-      return `<div class="rule-row">
-        ${makeSqHTML(r.from, true, `cycleColor(${i},'from')`)}
-        ${makeArrowHTML(r.not, true, `toggleNot(${i})`)}
-        ${countHTML}
-        ${makeSqHTML(r.toColor, true, `cycleColor(${i},'toColor')`)}
-        <button class="del-btn" onclick="deleteRule(${i})">×</button>
-      </div>`;
-    } else {
-      const countHTML = (!r.not && r.count > 1) ? `<span class="rule-count">${r.count}</span>` : '';
-      return `<div class="rule-row">
-        ${makeSqHTML(r.from, false)}
-        ${makeArrowHTML(r.not, false)}
-        ${countHTML}
-        ${makeSqHTML(r.toColor, false)}
-      </div>`;
+    let countHTML = '';
+    if (!r.not) {
+      countHTML = `
+        <button class="tiny-btn" onclick="adjustRuleCount(${i},-1)">−</button>
+        <span class="rule-count">${r.count}</span>
+        <button class="tiny-btn" onclick="adjustRuleCount(${i},1)">+</button>
+      `;
     }
+    return `<div class="rule-row">
+      ${makeSqHTML(r.from, true, `cycleColor(${i},'from')`)}
+      ${makeArrowHTML(r.not, true, `toggleNot(${i})`)}
+      ${countHTML}
+      ${makeSqHTML(r.toColor, true, `cycleColor(${i},'toColor')`)}
+      <button class="del-btn" onclick="deleteRule(${i})">×</button>
+    </div>`;
   }).join('');
 }
 
@@ -401,7 +358,7 @@ function renderCheck() {
     if (!pass) allPass = false;
     const el = document.querySelector(`.tile[data-idx="${i}"]`);
     const m = document.getElementById(`mark-${i}`);
-    if (el) el.style.borderColor = pass ? 'transparent' : 'rgba(255,71,87,0.85)';
+    if (el) el.style.borderColor = pass ? 'rgba(46,213,115,0.85)' : 'rgba(255,71,87,0.85)';
     if (m) { m.textContent = pass ? '✓' : '✕'; m.style.display = 'block'; }
   });
   banner.classList.toggle('show', allPass);
@@ -417,14 +374,14 @@ function adjustCount(color, delta) {
   counts[color] = nv;
   checking = false;
   document.getElementById('check-btn').textContent = 'Check';
-  buildTiles(); renderAll(); rememberPuzzle();
+  buildTiles(); renderAll();
 }
 
-function cycleColor(idx, field) { rules[idx][field] = nextColor(rules[idx][field]); checking=false; document.getElementById('check-btn').textContent='Check'; renderRules(); renderCheck(); rememberPuzzle(); }
-function toggleNot(idx) { rules[idx].not = !rules[idx].not; checking=false; document.getElementById('check-btn').textContent='Check'; renderRules(); renderCheck(); rememberPuzzle(); }
-function adjustRuleCount(idx, delta) { rules[idx].count = Math.max(1, Math.min(4, (rules[idx].count||1)+delta)); checking=false; document.getElementById('check-btn').textContent='Check'; renderRules(); renderCheck(); rememberPuzzle(); }
-function deleteRule(idx) { rules.splice(idx,1); checking=false; document.getElementById('check-btn').textContent='Check'; renderRules(); renderCheck(); rememberPuzzle(); }
-function addRule() { rules.push({from:'R',toColor:'B',count:1}); renderRules(); rememberPuzzle(); }
+function cycleColor(idx, field) { rules[idx][field] = nextColor(rules[idx][field]); checking=false; document.getElementById('check-btn').textContent='Check'; renderRules(); renderCheck(); }
+function toggleNot(idx) { rules[idx].not = !rules[idx].not; checking=false; document.getElementById('check-btn').textContent='Check'; renderRules(); renderCheck(); }
+function adjustRuleCount(idx, delta) { rules[idx].count = Math.max(1, Math.min(4, (rules[idx].count||1)+delta)); checking=false; document.getElementById('check-btn').textContent='Check'; renderRules(); renderCheck(); }
+function deleteRule(idx) { rules.splice(idx,1); checking=false; document.getElementById('check-btn').textContent='Check'; renderRules(); renderCheck(); }
+function addRule() { rules.push({from:'R',toColor:'B',count:1}); renderRules(); }
 
 function shuffle() { shuffleArray(tiles); checking=false; document.getElementById('check-btn').textContent='Check'; renderGrid(); renderCheck(); }
 function toggleCheck() {
@@ -514,45 +471,45 @@ function setSaved(list) { try { localStorage.setItem('colorTilePuzzles', JSON.st
 function savePuzzle() {
   const name = document.getElementById('save-input').value.trim();
   if (!name) return;
-  const puzzle = { name, counts:{...counts}, rules:rules.map(r=>({...r})) };
-  const blob = new Blob([JSON.stringify(puzzle, null, 2)], {type: 'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = name.replace(/[^a-zA-Z0-9_-]/g, '_') + '.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
+  const puzzle = { name, counts:{...counts}, rules:rules.map(r=>({...r})), tiles:tiles.map(t=>({...t})) };
+  let saved = getSaved().filter(p=>p.name!==name);
+  saved.push(puzzle);
+  setSaved(saved);
   document.getElementById('save-input').value = '';
   hideModal('save');
-  rememberPuzzle();
 }
 
-function loadFile(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const puzzle = JSON.parse(e.target.result);
-      if (puzzle.counts && puzzle.rules) {
-        counts = puzzle.counts;
-        rules = puzzle.rules;
-        checking = false;
-        document.getElementById('check-btn').textContent = 'Check';
-        buildTiles(); renderAll(); rememberPuzzle();
-      }
-    } catch(err) { alert('Invalid puzzle file.'); }
-  };
-  reader.readAsText(file);
-  event.target.value = '';
+function loadPuzzle(name) {
+  const puzzle = getSaved().find(p=>p.name===name);
+  if (!puzzle) return;
+  counts = {...puzzle.counts};
+  rules = puzzle.rules.map(r=>({...r}));
+  checking = false;
+  document.getElementById('check-btn').textContent = 'Check';
+  buildTiles(); renderAll(); hideModal('load');
+}
+
+function deletePuzzle(name) {
+  setSaved(getSaved().filter(p=>p.name!==name));
+  renderPuzzleList();
+}
+
+function renderPuzzleList() {
+  const list = getSaved();
+  const el = document.getElementById('puzzle-list');
+  if (!list.length) { el.innerHTML = '<p style="color:#999;font-size:14px;font-style:italic">No saved puzzles yet.</p>'; return; }
+  el.innerHTML = list.map(p => `
+    <div class="puzzle-item">
+      <span>${p.name}</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn" style="padding:6px 14px;color:#555;border-color:#ddd;background:#f5f5f5" onclick="loadPuzzle('${p.name.replace(/'/g,"\\'")}')">Load</button>
+        <button class="del-btn" style="font-size:16px" onclick="deletePuzzle('${p.name.replace(/'/g,"\\'")}')">×</button>
+      </div>
+    </div>
+  `).join('');
 }
 
 /* ═══════ PRINT ═══════ */
-const PRINT_PAL = {
-  R: '#FF0000',
-  B: '#4D4DFF',
-  Y: '#FFFF00',
-};
-
 function buildPrintHTML() {
   const countsHTML = Object.entries(counts).map(([c,n]) =>
     `<span class="pp-chip"><span class="mini-sq" style="width:14px;height:14px;border-radius:3px;background:${PAL[c].bg}"></span><b>${CNAME[c]}</b> ×${n}</span>`
@@ -569,11 +526,11 @@ function buildPrintHTML() {
   }).join('');
 
   const gridHTML = tiles.map(t =>
-    `<div class="pp-tile" style="background:${PRINT_PAL[t.color]}"></div>`
+    `<div class="pp-tile" style="background:${PAL[t.color].bg}"></div>`
   ).join('');
 
   return `
-    <h2>COLORED SQUARES</h2>
+    <h2>COLOR TILES</h2>
     <div class="pp-label">SQUARES BY COLOR</div>
     <div class="pp-counts">${countsHTML}</div>
     <div class="pp-label">RULES</div>
@@ -595,21 +552,11 @@ function hidePrintPreview() {
 
 function doPrint() {
   document.getElementById('print-content').innerHTML = buildPrintHTML();
-  window.print();
+  hidePrintPreview();
+  setTimeout(() => window.print(), 100);
 }
 
-/* ═══════ EDIT MODE TOGGLE ═══════ */
-document.addEventListener('keydown', function(e) {
-  if (e.ctrlKey && e.key === '`') {
-    e.preventDefault();
-    editMode = !editMode;
-    document.body.classList.toggle('edit-mode', editMode);
-    renderAll();
-  }
-});
-
 /* ═══════ INIT ═══════ */
-recallPuzzle();
 buildTiles();
 renderAll();
 </script>
