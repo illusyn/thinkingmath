@@ -1,11 +1,320 @@
----
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thinking Math</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #1a1a2e;
+            --paper: #faf9f6;
+            --warm: #e8e4dd;
+            --red: #c0392b;
+            --blue: #2471a3;
+            --gold: #d4a017;
+            --green: #27ae60;
+            --muted: #7f8c8d;
+        }
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
----
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-<Layout>
-	<Welcome />
-</Layout>
+        body {
+            font-family: 'Source Sans 3', sans-serif;
+            background: var(--paper);
+            color: var(--ink);
+            min-height: 100vh;
+        }
+
+        /* --- Header --- */
+        header {
+            padding: 60px 40px 50px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(circle at 15% 50%, rgba(192,57,43,0.06) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(36,113,163,0.06) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(212,160,23,0.06) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .site-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: clamp(2.8rem, 6vw, 4.5rem);
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .site-title .thinking {
+            color: var(--ink);
+        }
+        .site-title .math {
+            color: var(--red);
+        }
+
+        .tagline {
+            font-size: 1.15rem;
+            font-weight: 300;
+            color: var(--muted);
+            letter-spacing: 0.03em;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* --- Decorative shapes --- */
+        .shapes-row {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            margin: 30px auto 0;
+            opacity: 0.35;
+        }
+
+        .shapes-row svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        /* --- Main content --- */
+        main {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 0 30px 80px;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 20px;
+            padding-left: 2px;
+        }
+
+        /* --- Activity cards --- */
+        .activities {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .activity-card {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 28px 30px;
+            background: white;
+            border-radius: 12px;
+            border: 1.5px solid transparent;
+            text-decoration: none;
+            color: var(--ink);
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .activity-card:hover {
+            border-color: var(--warm);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+            transform: translateY(-2px);
+        }
+
+        .card-icon {
+            flex-shrink: 0;
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-icon.colored-squares {
+            background: linear-gradient(135deg, var(--red) 33%, var(--blue) 33% 66%, var(--gold) 66%);
+        }
+
+        .card-icon.logical-shapes {
+            background: var(--blue);
+            opacity: 0.7;
+        }
+
+        .card-icon.area-puzzles {
+            background: var(--green);
+            opacity: 0.7;
+        }
+
+        .card-icon.perimeter-pens {
+            background: var(--gold);
+            opacity: 0.7;
+        }
+
+        .card-body {
+            flex: 1;
+        }
+
+        .card-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.35rem;
+            margin-bottom: 4px;
+        }
+
+        .card-desc {
+            font-size: 0.92rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .card-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 20px;
+            flex-shrink: 0;
+        }
+
+        .badge-live {
+            background: #e8f8f0;
+            color: var(--green);
+        }
+
+        .badge-soon {
+            background: var(--warm);
+            color: var(--muted);
+        }
+
+        .card-disabled {
+            opacity: 0.55;
+            pointer-events: none;
+        }
+
+        /* --- About section --- */
+        .about {
+            margin-top: 60px;
+            padding: 36px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .about h2 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.4rem;
+            margin-bottom: 12px;
+        }
+
+        .about p {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #444;
+        }
+
+        .about p + p {
+            margin-top: 10px;
+        }
+
+        /* --- Footer --- */
+        footer {
+            text-align: center;
+            padding: 30px;
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 600px) {
+            header { padding: 40px 20px 35px; }
+            main { padding: 0 16px 60px; }
+            .activity-card { padding: 20px; gap: 16px; flex-wrap: wrap; }
+            .card-icon { width: 44px; height: 44px; }
+            .card-badge { margin-top: 4px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1 class="site-title">
+        <span class="thinking">Thinking</span> <span class="math">Math</span>
+    </h1>
+    <p class="tagline">Visual puzzles and activities that build mathematical thinking</p>
+
+    <div class="shapes-row">
+        <svg viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="16" fill="none" stroke="var(--red)" stroke-width="2"/></svg>
+        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="none" stroke="var(--blue)" stroke-width="2"/></svg>
+        <svg viewBox="0 0 20 20"><polygon points="10,2 18,18 2,18" fill="none" stroke="var(--gold)" stroke-width="2"/></svg>
+        <svg viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="16" fill="none" stroke="var(--blue)" stroke-width="2"/></svg>
+        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="none" stroke="var(--green)" stroke-width="2"/></svg>
+        <svg viewBox="0 0 20 20"><polygon points="10,2 18,18 2,18" fill="none" stroke="var(--red)" stroke-width="2"/></svg>
+        <svg viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="16" fill="none" stroke="var(--gold)" stroke-width="2"/></svg>
+    </div>
+</header>
+
+<main>
+    <div class="section-label">Activities</div>
+
+    <div class="activities">
+
+        <a href="/explorations/coloredsquarepuzzles/index.html" class="activity-card">
+            <div class="card-icon colored-squares"></div>
+            <div class="card-body">
+                <div class="card-title">Colored Squares</div>
+                <div class="card-desc">Arrange colored tiles on a grid to satisfy adjacency rules. Learn mathematical notation through hands-on puzzles.</div>
+            </div>
+            <span class="card-badge badge-live">Live</span>
+        </a>
+
+        <div class="activity-card card-disabled">
+            <div class="card-icon logical-shapes"></div>
+            <div class="card-body">
+                <div class="card-title">Logical Shapes</div>
+                <div class="card-desc">Place shapes inside shapes following simple rules. Discover why only certain arrangements work.</div>
+            </div>
+            <span class="card-badge badge-soon">Coming soon</span>
+        </div>
+
+        <div class="activity-card card-disabled">
+            <div class="card-icon area-puzzles"></div>
+            <div class="card-body">
+                <div class="card-title">Hidden Area</div>
+                <div class="card-desc">Figure out what's hiding under the big square. Build spatial reasoning and area concepts.</div>
+            </div>
+            <span class="card-badge badge-soon">Coming soon</span>
+        </div>
+
+        <div class="activity-card card-disabled">
+            <div class="card-icon perimeter-pens"></div>
+            <div class="card-body">
+                <div class="card-title">Fencing Puzzles</div>
+                <div class="card-desc">How much fencing do you need? Compound shapes where shared edges make perimeter surprising.</div>
+            </div>
+            <span class="card-badge badge-soon">Coming soon</span>
+        </div>
+
+    </div>
+
+    <div class="about">
+        <h2>About Thinking Math</h2>
+        <p>Thinking Math is a collection of visual, hands-on activities designed to build genuine mathematical thinking in middle school students. Each activity uses a concrete puzzle to introduce abstract mathematical ideas — relations, symmetry, combinatorics, spatial reasoning — so the insight emerges through the solving process rather than being taught first.</p>
+        <p>Created by Bill Rishel, drawing on 20 years of developing innovative math activities.</p>
+    </div>
+</main>
+
+<footer>
+    &copy; 2026 Thinking Math &middot; thinkingmath.org
+</footer>
+
+</body>
+</html>
