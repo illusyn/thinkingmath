@@ -1,0 +1,11 @@
+# Ignore versioned working files
+colored-squares-index-V*.html
+puzzle-browser-V*.html
+
+# Ignore browser-saved HTML files
+Color Tiles.html
+Color Tiles_files/
+
+# Ignore old versioned files
+colored-squares-index.html
+coloredsquarepuzzles.html
