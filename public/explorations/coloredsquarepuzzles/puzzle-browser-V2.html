@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Colored Squares — Puzzle Browser</title>
+  <style>
+    :root {
+      --font-size-xs: 12px;
+      --font-size-sm: 14px;
+      --font-size-base: 16px;
+      --font-size-lg: 18px;
+      --font-size-xl: 20px;
+      --font-size-2xl: 26px;
+
+      --red:    #e84040;
+      --blue:   #4d6fff;
+      --yellow: #f5c800;
+      --red-bg:    #fde8e8;
+      --blue-bg:   #e8eeff;
+      --yellow-bg: #fdf8e1;
+
+      --text:       #1a1a2e;
+      --text-muted: #6b7280;
+      --bg:         #f4f6fb;
+      --card-bg:    #ffffff;
+      --border:     #dde2ee;
+      --accent:     #4d6fff;
+      --shadow:     0 2px 10px rgba(0,0,0,0.08);
+      --radius:     10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: var(--font-size-base);
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #fff;
+      border-bottom: 2px solid var(--border);
+      padding: 18px 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .header-title {
+      font-size: var(--font-size-2xl);
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.5px;
+      flex: 1 1 auto;
+    }
+    .header-title span { color: var(--accent); }
+    .count-badge {
+      font-size: var(--font-size-sm);
+      color: var(--text-muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 14px;
+      display: none;
+    }
+
+    /* ── Drop zone ── */
+    #drop-zone {
+      margin: 32px auto;
+      max-width: 540px;
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 44px 32px;
+      text-align: center;
+      background: #fff;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    #drop-zone:hover, #drop-zone.drag-over {
+      border-color: var(--accent);
+      background: #f0f3ff;
+    }
+    #drop-zone .dz-icon { font-size: 48px; display: block; margin-bottom: 14px; }
+    #drop-zone .dz-title { font-size: var(--font-size-lg); font-weight: 600; margin-bottom: 8px; }
+    #drop-zone .dz-sub { font-size: var(--font-size-sm); color: var(--text-muted); margin-bottom: 20px; }
+    .btn-load {
+      background: var(--accent); color: #fff;
+      font-size: var(--font-size-base); font-weight: 600;
+      border: none; border-radius: 8px; padding: 10px 26px;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-load:hover { background: #3558e0; }
+
+    /* ── Toolbar ── */
+    #toolbar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 28px;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    #toolbar.visible { display: flex; }
+    .toolbar-label {
+      font-size: var(--font-size-sm);
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .sort-btn {
+      font-size: var(--font-size-sm);
+      padding: 5px 14px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: #fff; color: var(--text);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .sort-btn:hover, .sort-btn.active {
+      border-color: var(--accent); background: #f0f3ff; color: var(--accent);
+    }
+    .toolbar-sep {
+      width: 1px; height: 24px;
+      background: var(--border); margin: 0 2px;
+      flex-shrink: 0;
+    }
+    .search-box {
+      padding: 6px 14px;
+      border: 1px solid var(--border); border-radius: 20px;
+      font-size: var(--font-size-sm); color: var(--text);
+      width: 200px; outline: none;
+    }
+    .search-box:focus { border-color: var(--accent); }
+
+    #print-selected-btn {
+      display: none;
+      margin-left: auto;
+      background: #1a1a2e; color: #fff;
+      font-size: var(--font-size-sm); font-weight: 600;
+      border: none; border-radius: 8px; padding: 7px 18px;
+      cursor: pointer; transition: background 0.15s;
+      align-items: center; gap: 6px;
+    }
+    #print-selected-btn.visible { display: flex; }
+    #print-selected-btn:hover { background: #2d2d4e; }
+
+    #clear-sel-btn {
+      display: none;
+      font-size: var(--font-size-sm);
+      color: var(--text-muted);
+      background: none; border: none; cursor: pointer;
+      text-decoration: underline; padding: 0;
+    }
+    #clear-sel-btn.visible { display: inline; }
+
+    /* ── Grid ── */
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+      padding: 24px 28px 48px;
+    }
+
+    /* ── Puzzle Card ── */
+    .puzzle-card {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: box-shadow 0.2s, transform 0.15s, border-color 0.15s;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .puzzle-card:hover {
+      box-shadow: 0 6px 22px rgba(0,0,0,0.13);
+      transform: translateY(-2px);
+    }
+    .puzzle-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(77,111,255,0.18), var(--shadow);
+    }
+
+    .card-checkbox {
+      position: absolute;
+      top: 10px; left: 10px;
+      width: 20px; height: 20px;
+      cursor: pointer;
+      z-index: 10;
+      accent-color: var(--accent);
+    }
+
+    .card-grid-wrap {
+      padding: 16px 16px 10px;
+      display: flex;
+      justify-content: center;
+    }
+    .mini-grid {
+      display: grid;
+      gap: 3px;
+      border: 1px solid #c8cfe0;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #c8cfe0;
+    }
+    .mini-cell { width: 28px; height: 28px; }
+
+    .card-body {
+      padding: 6px 16px 10px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .card-name-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-name {
+      font-size: var(--font-size-lg);
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+    .rename-btn {
+      flex-shrink: 0;
+      background: none; border: none;
+      color: var(--text-muted); font-size: 14px;
+      cursor: pointer; padding: 2px 4px; border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+      opacity: 0;
+    }
+    .puzzle-card:hover .rename-btn { opacity: 1; }
+    .rename-btn:hover { color: var(--accent); background: #f0f3ff; }
+
+    .rename-input {
+      font-size: var(--font-size-lg);
+      font-weight: 700;
+      color: var(--text);
+      border: 2px solid var(--accent);
+      border-radius: 6px;
+      padding: 2px 8px;
+      flex: 1;
+      outline: none;
+      min-width: 0;
+    }
+    .rename-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .rename-ok, .rename-cancel {
+      font-size: 13px; font-weight: 700;
+      border: none; border-radius: 5px;
+      padding: 3px 8px; cursor: pointer;
+    }
+    .rename-ok { background: var(--accent); color: #fff; }
+    .rename-cancel { background: #f0f0f0; color: #555; }
+
+    .composition { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+    .comp-chip {
+      display: flex; align-items: center; gap: 5px;
+      font-size: var(--font-size-sm); font-weight: 600;
+      padding: 3px 10px 3px 6px; border-radius: 20px;
+      border: 1.5px solid transparent;
+    }
+    .comp-chip.R { background: var(--red-bg);    border-color: #f4a0a0; color: #b71c1c; }
+    .comp-chip.B { background: var(--blue-bg);   border-color: #a0b4ff; color: #1a3ca8; }
+    .comp-chip.Y { background: var(--yellow-bg); border-color: #ffe080; color: #7a5c00; }
+    .comp-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+
+    .rules-section { display: flex; flex-direction: column; gap: 5px; }
+    .rule-row { display: flex; align-items: center; gap: 5px; font-size: var(--font-size-sm); }
+    .rule-sq {
+      width: 14px; height: 14px; border-radius: 3px;
+      border: 1px solid rgba(0,0,0,0.12); flex-shrink: 0;
+    }
+    .rule-arrow {
+      font-size: 15px; color: #555;
+      display: inline-flex; align-items: center;
+      position: relative; margin: 0 2px;
+    }
+    .rule-arrow.negated::after {
+      content: ''; position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%,-50%) rotate(-30deg);
+      width: 2px; height: 18px; background: #e84040;
+    }
+    .rule-count {
+      font-size: var(--font-size-xs); font-weight: 700;
+      color: #444; background: #f0f0f0; border-radius: 4px; padding: 1px 5px;
+    }
+    .no-rules { font-size: var(--font-size-xs); color: var(--text-muted); font-style: italic; }
+
+    .card-divider { height: 1px; background: var(--border); }
+    .card-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding: 8px 12px;
+      gap: 8px;
+    }
+    .card-action-btn {
+      font-size: var(--font-size-xs);
+      padding: 4px 12px;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: #f8f9fc; color: var(--text-muted);
+      cursor: pointer; transition: all 0.15s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .card-action-btn:hover { border-color: var(--accent); color: var(--accent); background: #f0f3ff; }
+
+    #empty-state { display: none; text-align: center; padding: 60px 28px; color: var(--text-muted); }
+    #empty-state.visible { display: block; }
+    #empty-state .es-icon { font-size: 48px; margin-bottom: 14px; }
+    #empty-state .es-msg { font-size: var(--font-size-lg); }
+
+    #toast {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1a1a2e; color: #fff;
+      font-size: var(--font-size-sm); font-weight: 500;
+      padding: 10px 22px; border-radius: 24px;
+      opacity: 0; transition: all 0.3s; z-index: 9999;
+      pointer-events: none; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-title">Colored Squares — <span>Puzzle Browser</span></div>
+  <span class="count-badge" id="count-badge">0 puzzles</span>
+</header>
+
+<div id="toolbar">
+  <button class="sort-btn" onclick="triggerFolderPick()" id="change-folder-btn">📂 Change Folder</button>
+  <div class="toolbar-sep"></div>
+  <span class="toolbar-label">Sort:</span>
+  <button class="sort-btn active" id="sort-name"  onclick="setSort('name')">Name</button>
+  <button class="sort-btn"        id="sort-size"  onclick="setSort('size')">Grid size</button>
+  <button class="sort-btn"        id="sort-rules" onclick="setSort('rules')">Rule count</button>
+  <div class="toolbar-sep"></div>
+  <input class="search-box" type="text" placeholder="Search puzzles…"
+         oninput="filterPuzzles(this.value)" id="search-input">
+  <div class="toolbar-sep"></div>
+  <button class="sort-btn" onclick="toggleSelectAll()" id="sel-all-btn">Select All</button>
+  <button id="clear-sel-btn" onclick="clearSelection()">Clear selection</button>
+  <button id="print-selected-btn" onclick="printSelected()">
+    🖨 Print Selected (<span id="sel-count">0</span>)
+  </button>
+</div>
+
+<div id="drop-zone" onclick="triggerFolderPick()">
+  <span class="dz-icon">📂</span>
+  <div class="dz-title">Open a puzzle folder</div>
+  <div class="dz-sub">Select a folder containing <code>.json</code> puzzle files</div>
+  <button class="btn-load" onclick="triggerFolderPick(); event.stopPropagation()">Choose Folder…</button>
+</div>
+<input type="file" id="folder-input" webkitdirectory multiple accept=".json"
+       style="display:none" onchange="loadFolder(event)">
+
+<div id="empty-state">
+  <div class="es-icon">🔍</div>
+  <div class="es-msg">No puzzles match your search.</div>
+</div>
+
+<div id="grid"></div>
+<div id="toast"></div>
+
+<script>
+  // ── Palettes ──
+  const PAL    = { R: '#e84040', B: '#4d6fff', Y: '#f5c800' };  // screen
+  const PPRINT = { R: '#ff0000', B: '#4d4dff', Y: '#ffff00' };  // print
+  const CNAME  = { R: 'Red', B: 'Blue', Y: 'Yellow' };
+
+  let allPuzzles    = [];
+  let selectedIds   = new Set();
+  let currentSort   = 'name';
+  let currentSearch = '';
+  let nextId = 0;
+
+  // ── LOADING ──────────────────────────────
+  function triggerFolderPick() {
+    document.getElementById('folder-input').click();
+  }
+
+  function loadFolder(event) {
+    const files = Array.from(event.target.files).filter(f => f.name.endsWith('.json'));
+    if (!files.length) return;
+    allPuzzles = [];
+    let pending = files.length;
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (data.counts && data.rules) {
+            allPuzzles.push({ ...data, _filename: file.name, _id: nextId++ });
+          }
+        } catch (_) {}
+        if (--pending === 0) renderAll();
+      };
+      reader.readAsText(file);
+    });
+    event.target.value = '';
+  }
+
+  function renderAll() {
+    document.getElementById('drop-zone').style.display = 'none';
+    document.getElementById('toolbar').classList.add('visible');
+    const badge = document.getElementById('count-badge');
+    badge.style.display = '';
+    badge.textContent = `${allPuzzles.length} puzzle${allPuzzles.length !== 1 ? 's' : ''}`;
+    applyFiltersAndSort();
+  }
+
+  // ── SORT / FILTER ─────────────────────────
+  function setSort(key) {
+    currentSort = key;
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('sort-' + key).classList.add('active');
+    applyFiltersAndSort();
+  }
+
+  function filterPuzzles(query) {
+    currentSearch = query.toLowerCase();
+    applyFiltersAndSort();
+  }
+
+  function applyFiltersAndSort() {
+    let list = allPuzzles.filter(p =>
+      !currentSearch || (p.name || p._filename || '').toLowerCase().includes(currentSearch)
+    );
+    if (currentSort === 'name')  list.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    if (currentSort === 'size')  list.sort((a,b) => totalTiles(a) - totalTiles(b));
+    if (currentSort === 'rules') list.sort((a,b) => (a.rules?.length||0) - (b.rules?.length||0));
+
+    const grid  = document.getElementById('grid');
+    const empty = document.getElementById('empty-state');
+    if (!list.length) { grid.innerHTML = ''; empty.classList.add('visible'); }
+    else              { empty.classList.remove('visible'); grid.innerHTML = list.map(buildCard).join(''); }
+  }
+
+  // ── CARD BUILDING ─────────────────────────
+  function totalTiles(p) {
+    return Object.values(p.counts || {}).reduce((a,b) => a + b, 0);
+  }
+
+  function buildCard(puzzle) {
+    const id   = puzzle._id;
+    const name = escapeHtml(puzzle.name || puzzle._filename || 'Untitled');
+    const sel  = selectedIds.has(id) ? 'selected' : '';
+    const chk  = selectedIds.has(id) ? 'checked'  : '';
+    return `
+    <div class="puzzle-card ${sel}" id="card-${id}">
+      <input type="checkbox" class="card-checkbox" ${chk}
+             onclick="toggleSelect(${id}, this.checked); event.stopPropagation()">
+      <div class="card-grid-wrap">${buildMiniGrid(puzzle)}</div>
+      <div class="card-divider"></div>
+      <div class="card-body">
+        <div class="card-name-row" id="name-row-${id}">
+          <div class="card-name" title="${name}">${name}</div>
+          <button class="rename-btn" title="Rename"
+                  onclick="startRename(${id}); event.stopPropagation()">✏️</button>
+        </div>
+        <div class="composition">${buildComposition(puzzle.counts || {})}</div>
+        ${buildRules(puzzle.rules || [])}
+      </div>
+      <div class="card-divider"></div>
+      <div class="card-footer">
+        <button class="card-action-btn" onclick="printSingle(${id})">🖨 Print</button>
+      </div>
+    </div>`;
+  }
+
+  function buildMiniGrid(puzzle) {
+    const tiles = puzzle.tiles;
+    const total = totalTiles(puzzle);
+    const cols  = Math.max(1, Math.round(Math.sqrt(total)));
+
+    if (tiles && tiles.length > 0) {
+      // Use saved solution tiles — grid is always TOTAL=16 in the app, so derive cols from tile count
+      const actualCols = Math.max(1, Math.round(Math.sqrt(tiles.length)));
+      const cells = tiles.map(t =>
+        `<div class="mini-cell" style="background:${PAL[t.color]||'#ccc'}"></div>`
+      ).join('');
+      return `<div class="mini-grid" style="grid-template-columns:repeat(${actualCols},28px)">${cells}</div>`;
+    }
+    // No solution saved — deterministic color placeholder
+    const colors = [];
+    ['R','B','Y'].forEach(k => { for (let i = 0; i < (puzzle.counts[k]||0); i++) colors.push(k); });
+    const seed = [...(puzzle.name||'')].reduce((s,c) => s + c.charCodeAt(0), 0);
+    const cells = deterministicShuffle(colors, seed).map(col =>
+      `<div class="mini-cell" style="background:${PAL[col]}"></div>`
+    ).join('');
+    return `<div class="mini-grid" style="grid-template-columns:repeat(${cols},28px)">${cells}</div>`;
+  }
+
+  function deterministicShuffle(arr, seed) {
+    const a = [...arr]; let s = seed;
+    for (let i = a.length - 1; i > 0; i--) {
+      s = (s * 1664525 + 1013904223) & 0xffffffff;
+      const j = Math.abs(s) % (i + 1);
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function buildComposition(counts) {
+    return Object.entries(counts).filter(([,n]) => n > 0).map(([color, n]) =>
+      `<span class="comp-chip ${color}">
+        <span class="comp-dot" style="background:${PAL[color]}"></span>
+        ${CNAME[color]||color} ×${n}
+      </span>`
+    ).join('');
+  }
+
+  function buildRules(rules) {
+    if (!rules.length) return `<div class="no-rules">No adjacency rules</div>`;
+    return `<div class="rules-section">${rules.map(r => `
+      <div class="rule-row">
+        <div class="rule-sq" style="background:${PAL[r.from]||'#ccc'}"></div>
+        <span class="rule-arrow ${r.not ? 'negated' : ''}">⟶</span>
+        ${(!r.not && r.count > 1) ? `<span class="rule-count">≥${r.count}</span>` : ''}
+        <div class="rule-sq" style="background:${PAL[r.toColor]||'#ccc'}"></div>
+      </div>`).join('')}</div>`;
+  }
+
+  // ── RENAME ────────────────────────────────
+  function startRename(id) {
+    const puzzle = allPuzzles.find(p => p._id === id);
+    if (!puzzle) return;
+    const row = document.getElementById(`name-row-${id}`);
+    const currentName = escapeHtml(puzzle.name || '');
+    row.innerHTML = `
+      <input class="rename-input" id="rename-input-${id}"
+             value="${currentName}"
+             onkeydown="handleRenameKey(event,${id})"
+             onclick="event.stopPropagation()">
+      <div class="rename-actions">
+        <button class="rename-ok"     onclick="confirmRename(${id})">✓</button>
+        <button class="rename-cancel" onclick="cancelRename(${id})">✕</button>
+      </div>`;
+    const inp = document.getElementById(`rename-input-${id}`);
+    inp.focus(); inp.select();
+  }
+
+  function handleRenameKey(e, id) {
+    if (e.key === 'Enter')  { e.preventDefault(); confirmRename(id); }
+    if (e.key === 'Escape') { cancelRename(id); }
+  }
+
+  function confirmRename(id) {
+    const inp = document.getElementById(`rename-input-${id}`);
+    if (!inp) return;
+    const newName = inp.value.trim();
+    if (!newName) return;
+    const puzzle = allPuzzles.find(p => p._id === id);
+    if (!puzzle) return;
+    puzzle.name = newName;
+    // Download updated JSON
+    const copy = { ...puzzle };
+    delete copy._filename; delete copy._id;
+    const blob = new Blob([JSON.stringify(copy, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = newName.replace(/[^a-zA-Z0-9_\- ]/g, '_') + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    restoreNameRow(id);
+    showToast(`Renamed to "${newName}" — updated file downloaded`);
+  }
+
+  function cancelRename(id) {
+    restoreNameRow(id);
+  }
+
+  function restoreNameRow(id) {
+    const puzzle = allPuzzles.find(p => p._id === id);
+    if (!puzzle) return;
+    const name = escapeHtml(puzzle.name || puzzle._filename || 'Untitled');
+    const row  = document.getElementById(`name-row-${id}`);
+    if (row) row.innerHTML = `
+      <div class="card-name" title="${name}">${name}</div>
+      <button class="rename-btn" title="Rename"
+              onclick="startRename(${id}); event.stopPropagation()">✏️</button>`;
+  }
+
+  // ── SELECTION ─────────────────────────────
+  function toggleSelect(id, checked) {
+    if (checked) selectedIds.add(id);
+    else         selectedIds.delete(id);
+    document.getElementById(`card-${id}`)?.classList.toggle('selected', checked);
+    updateSelectionUI();
+  }
+
+  function updateSelectionUI() {
+    const n = selectedIds.size;
+    document.getElementById('sel-count').textContent = n;
+    document.getElementById('print-selected-btn').classList.toggle('visible', n > 0);
+    document.getElementById('clear-sel-btn').classList.toggle('visible', n > 0);
+    document.getElementById('sel-all-btn').textContent =
+      (selectedIds.size === allPuzzles.length && allPuzzles.length > 0) ? 'Deselect All' : 'Select All';
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === allPuzzles.length && allPuzzles.length > 0) {
+      clearSelection();
+    } else {
+      allPuzzles.forEach(p => {
+        selectedIds.add(p._id);
+        const card = document.getElementById(`card-${p._id}`);
+        if (card) {
+          card.classList.add('selected');
+          const cb = card.querySelector('.card-checkbox');
+          if (cb) cb.checked = true;
+        }
+      });
+      updateSelectionUI();
+    }
+  }
+
+  function clearSelection() {
+    selectedIds.clear();
+    document.querySelectorAll('.puzzle-card').forEach(c => {
+      c.classList.remove('selected');
+      const cb = c.querySelector('.card-checkbox');
+      if (cb) cb.checked = false;
+    });
+    updateSelectionUI();
+  }
+
+  // ── PRINT ─────────────────────────────────
+  function printSingle(id) {
+    const puzzle = allPuzzles.find(p => p._id === id);
+    if (puzzle) openPrintWindow([puzzle], false);
+  }
+
+  function printSelected() {
+    const list = allPuzzles.filter(p => selectedIds.has(p._id));
+    if (list.length) openPrintWindow(list, list.length > 1);
+  }
+
+  function openPrintWindow(puzzles, multi) {
+    const html = buildPrintDocument(puzzles, multi);
+    const win  = window.open('', '_blank', 'width=900,height=700');
+    win.document.write(html);
+    win.document.close();
+    win.onload = () => { win.focus(); win.print(); };
+  }
+
+  function buildPrintDocument(puzzles, multi) {
+    const cellPx = multi ? 22 : 38;
+    const panels = puzzles.map(p => buildPrintPanel(p, multi, cellPx)).join('\n');
+
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Colored Squares Puzzles</title>
+<style>
+  *, *::before, *::after {
+    box-sizing: border-box; margin: 0; padding: 0;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: white;
+    padding: ${multi ? '18px' : '36px'};
+  }
+  .print-grid {
+    display: grid;
+    grid-template-columns: ${multi ? 'repeat(2,1fr)' : '1fr'};
+    gap: ${multi ? '22px' : '0'};
+  }
+  .print-panel {
+    border: 1.5px solid #bbb;
+    border-radius: 10px;
+    padding: ${multi ? '14px' : '28px'};
+    break-inside: avoid;
+    background: white;
+  }
+  .pp-title {
+    font-size: ${multi ? '14px' : '24px'};
+    font-weight: 800; color: #1a1a2e;
+    text-align: center;
+    margin-bottom: ${multi ? '10px' : '20px'};
+  }
+  .pp-grid-wrap { display:flex; justify-content:center; margin-bottom:${multi?'10px':'20px'}; }
+  .pp-grid {
+    display: grid;
+    gap: ${multi ? '3px' : '4px'};
+    border: 1px solid #999; border-radius: 5px;
+    overflow: hidden; background: #999;
+  }
+  .pp-cell { width:${cellPx}px; height:${cellPx}px; }
+
+  .pp-label {
+    font-size: ${multi ? '9px' : '11px'};
+    text-transform: uppercase; letter-spacing: 0.8px;
+    color: #888; font-weight: 600;
+    margin-bottom: ${multi ? '4px' : '6px'};
+  }
+  .pp-comp { display:flex; gap:${multi?'5px':'10px'}; flex-wrap:wrap; margin-bottom:${multi?'8px':'14px'}; }
+  .pp-chip {
+    display:flex; align-items:center; gap:4px;
+    font-size:${multi?'11px':'14px'}; font-weight:700;
+    padding:${multi?'2px 7px 2px 4px':'3px 12px 3px 7px'};
+    border-radius:20px; border:1.5px solid transparent;
+  }
+  .pp-dot { width:${multi?'10px':'13px'}; height:${multi?'10px':'13px'}; border-radius:3px; }
+  .chip-R { background:#fde8e8; border-color:#f4a0a0; color:#b71c1c; }
+  .chip-B { background:#e8eeff; border-color:#a0b4ff; color:#1a3ca8; }
+  .chip-Y { background:#fdf8e1; border-color:#ffe080; color:#7a5c00; }
+
+  .pp-rules { display:flex; flex-direction:column; gap:${multi?'4px':'7px'}; }
+  .pp-rule  { display:flex; align-items:center; gap:${multi?'4px':'6px'}; }
+  .pp-sq {
+    width:${multi?'13px':'18px'}; height:${multi?'13px':'18px'};
+    border-radius:3px; border:1px solid rgba(0,0,0,0.15); flex-shrink:0;
+  }
+  .pp-arrow {
+    font-size:${multi?'14px':'19px'}; color:#444;
+    display:inline-flex; align-items:center;
+    position:relative; margin:0 2px;
+  }
+  .pp-arrow.neg::after {
+    content:''; position:absolute; left:50%; top:50%;
+    transform:translate(-50%,-50%) rotate(-30deg);
+    width:2px; height:${multi?'16px':'22px'}; background:#e84040;
+  }
+  .pp-rcount {
+    font-size:${multi?'10px':'13px'}; font-weight:700;
+    color:#444; background:#eee; border-radius:4px; padding:1px 5px;
+  }
+  @media print { body { padding:${multi?'8px':'20px'}; } }
+</style></head><body>
+<div class="print-grid">${panels}</div>
+</body></html>`;
+  }
+
+  function buildPrintPanel(puzzle, multi, cellPx) {
+    const name  = escapeHtml(puzzle.name || puzzle._filename || 'Untitled');
+    const total = totalTiles(puzzle);
+    const cols  = Math.max(1, Math.round(Math.sqrt(total)));
+
+    // grid
+    const tiles = puzzle.tiles;
+    let cells;
+    let gridCols = cols;
+    if (tiles && tiles.length > 0) {
+      gridCols = Math.max(1, Math.round(Math.sqrt(tiles.length)));
+      cells = tiles.map(t =>
+        `<div class="pp-cell" style="background:${PPRINT[t.color]||'#eee'}"></div>`
+      ).join('');
+    } else {
+      const colors = [];
+      ['R','B','Y'].forEach(k => { for (let i=0;i<(puzzle.counts[k]||0);i++) colors.push(k); });
+      const seed = [...(puzzle.name||'')].reduce((s,c) => s + c.charCodeAt(0), 0);
+      cells = deterministicShuffle(colors, seed).map(col =>
+        `<div class="pp-cell" style="background:${PPRINT[col]}"></div>`
+      ).join('');
+    }
+    const gridHTML = `<div class="pp-grid" style="grid-template-columns:repeat(${gridCols},${cellPx}px)">${cells}</div>`;
+
+    // composition
+    const compHTML = Object.entries(puzzle.counts||{}).filter(([,n])=>n>0).map(([color,n]) =>
+      `<span class="pp-chip chip-${color}">
+        <span class="pp-dot" style="background:${PPRINT[color]}"></span>
+        ${CNAME[color]} ×${n}
+      </span>`
+    ).join('');
+
+    // rules
+    const rulesHTML = (!puzzle.rules || !puzzle.rules.length)
+      ? `<div style="font-size:11px;color:#999;font-style:italic">None</div>`
+      : puzzle.rules.map(r => `
+          <div class="pp-rule">
+            <div class="pp-sq" style="background:${PPRINT[r.from]||'#ccc'}"></div>
+            <span class="pp-arrow ${r.not?'neg':''}">⟶</span>
+            ${(!r.not && r.count > 1) ? `<span class="pp-rcount">≥${r.count}</span>` : ''}
+            <div class="pp-sq" style="background:${PPRINT[r.toColor]||'#ccc'}"></div>
+          </div>`).join('');
+
+    return `
+    <div class="print-panel">
+      <div class="pp-title">${name}</div>
+      <div class="pp-grid-wrap">${gridHTML}</div>
+      <div class="pp-label">Composition</div>
+      <div class="pp-comp">${compHTML}</div>
+      <div class="pp-label">Rules</div>
+      <div class="pp-rules">${rulesHTML}</div>
+    </div>`;
+  }
+
+  // ── UTILITIES ─────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+  }
+
+  function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.textContent = String(text);
+    return d.innerHTML;
+  }
+</script>
+</body>
+</html>

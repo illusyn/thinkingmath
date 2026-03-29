@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Tiles</title>
+<style>
+/* ===== PRINT COLOR SUPPORT ===== */
+* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; box-sizing: border-box; }
+
+/* ===== BASE ===== */
+body {
+  margin: 0; padding: 16px;
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: #111;
+  font-family: 'DM Sans', 'Avenir', 'Segoe UI', sans-serif;
+  user-select: none; -webkit-user-select: none;
+}
+#app { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 440px; }
+h1.title { color: #eee; font-size: 28px; font-weight: 800; letter-spacing: 8px; margin: 0 0 16px; }
+
+/* ===== PANELS ===== */
+.panel { width: 100%; border-radius: 14px; background: #fff; border: 1px solid #e0e0e0; margin-bottom: 20px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.panel-header { padding: 12px 18px; font-size: 13px; font-weight: 700; letter-spacing: 4px; color: #999; border-bottom: 1px solid #eee; }
+.panel-body { padding: 16px 18px 18px; }
+.section-label { font-size: 12px; font-weight: 700; letter-spacing: 3px; color: #aaa; margin-bottom: 12px; }
+.divider { height: 1px; background: #eee; margin: 16px 0 12px; }
+
+/* ===== NOTATION ===== */
+.explain-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.explain-text { color: #444; font-size: 15px; line-height: 1.6; }
+
+/* ===== MINI SQUARES & ARROWS ===== */
+.mini-sq { width: 22px; height: 22px; border-radius: 5px; flex-shrink: 0; display: inline-block; vertical-align: middle; }
+.mini-sq.clickable { cursor: pointer; border: 2px solid rgba(0,0,0,0.08); }
+.arrow { position: relative; display: inline-flex; align-items: center; margin: 0 4px; font-size: 22px; color: #555; line-height: 1; cursor: default; }
+.arrow.clickable { cursor: pointer; }
+.arrow .slash { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%) rotate(30deg); width: 2px; height: 20px; background: #555; border-radius: 1px; }
+
+/* ===== COUNTS ===== */
+.counts-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.count-chip { display: flex; align-items: center; gap: 6px; background: #f7f7f7; border-radius: 8px; padding: 6px 8px; }
+.count-dot { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+.count-name { color: #333; font-size: 16px; font-weight: 600; }
+.count-num { color: #333; font-size: 18px; font-weight: 700; min-width: 20px; text-align: center; }
+.total-row { margin-top: 10px; font-size: 14px; color: #999; font-weight: 600; text-align: right; }
+
+/* ===== RULES ===== */
+.rules-col { display: flex; flex-direction: column; gap: 10px; }
+.rule-row { display: flex; align-items: center; gap: 6px; }
+.rule-count { color: #333; font-size: 17px; font-weight: 700; min-width: 16px; text-align: center; }
+
+/* ===== SMALL BUTTONS ===== */
+.sm-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid #ddd; background: #f0f0f0; color: #555; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+.tiny-btn { width: 20px; height: 20px; border-radius: 4px; border: 1px solid #ddd; background: #f0f0f0; color: #555; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+.del-btn { width: 24px; height: 24px; border-radius: 6px; border: 1px solid #f5c6c6; background: #fff5f5; color: #e55; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; margin-left: 6px; }
+.add-rule-btn { align-self: flex-start; padding: 6px 14px; border-radius: 6px; border: 1px dashed #ccc; background: transparent; color: #888; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 4px; }
+
+/* ===== SOLVED ===== */
+.solved-banner { background: linear-gradient(135deg, rgba(46,213,115,0.15), rgba(46,213,115,0.05)); border: 1px solid rgba(46,213,115,0.3); border-radius: 10px; padding: 10px 24px; margin-bottom: 16px; color: #2ed573; font-size: 16px; font-weight: 800; letter-spacing: 6px; display: none; gap: 10px; align-items: center; }
+.solved-banner.show { display: flex; }
+
+/* ===== GRID ===== */
+.grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; width: 100%; aspect-ratio: 1/1; background: #fff; border-radius: 18px; padding: 10px; position: relative; border: 1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.tile { border-radius: 14px; display: flex; align-items: center; justify-content: center; position: relative; aspect-ratio: 1/1; cursor: grab; touch-action: none; border: 3px solid transparent; transition: transform 0.2s cubic-bezier(.4,0,.2,1), box-shadow 0.2s, opacity 0.15s; overflow: hidden; }
+.tile .shine { position: absolute; top: 0; left: 0; right: 0; height: 45%; background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 100%); border-radius: 11px 11px 0 0; pointer-events: none; }
+.tile .mark { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: rgba(255,255,255,0.85); font-size: 24px; font-weight: 900; z-index: 2; pointer-events: none; text-shadow: 0 1px 4px rgba(0,0,0,0.3); display: none; }
+.ghost { position: fixed; border-radius: 14px; z-index: 1000; pointer-events: none; transform: scale(1.08) rotate(2deg); display: none; overflow: hidden; }
+.ghost .shine { position: absolute; top: 0; left: 0; right: 0; height: 45%; background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 100%); border-radius: 11px 11px 0 0; pointer-events: none; }
+
+/* ===== BOTTOM BUTTONS ===== */
+.btn-row { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; justify-content: center; }
+
+/* Edit mode */
+.edit-only { display: none !important; }
+body.edit-mode .edit-only { display: flex !important; }
+body.edit-mode .edit-only-inline { display: inline !important; }
+.edit-only-inline { display: none !important; }
+
+#edit-badge {
+  display: none;
+  position: fixed; top: 12px; right: 12px;
+  background: #e63946; color: #fff;
+  font-size: 11px; font-weight: 800; letter-spacing: 1px;
+  padding: 4px 10px; border-radius: 6px;
+  z-index: 999;
+}
+body.edit-mode #edit-badge { display: block; }
+.btn { padding: 10px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: #ccc; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
+.btn:hover { background: rgba(255,255,255,0.14); }
+.btn-check { background: rgba(46,213,115,0.12); border-color: rgba(46,213,115,0.3); color: #2ed573; }
+.btn-print { background: rgba(69,123,157,0.15); border-color: rgba(69,123,157,0.3); color: #6BA3C7; }
+
+/* ===== MODALS ===== */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; }
+.modal-overlay.show { display: flex; }
+.modal { background: #fff; border-radius: 16px; padding: 24px 28px; width: 90%; max-width: 360px; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+.modal h3 { margin: 0 0 16px; font-size: 18px; font-weight: 700; color: #333; }
+.modal input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 15px; outline: none; }
+.modal-btns { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+.modal .btn { color: #555; border-color: #ddd; background: #f5f5f5; }
+.modal .btn-check { background: rgba(46,213,115,0.12); border-color: rgba(46,213,115,0.3); color: #2ed573; }
+.puzzle-list { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; }
+.puzzle-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f7f7f7; border-radius: 8px; }
+.puzzle-item span { font-size: 15px; font-weight: 600; color: #333; }
+
+/* ===== PRINT PREVIEW MODAL ===== */
+.print-preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 3000; }
+.print-preview-overlay.show { display: flex; }
+.print-preview { background: #fff; border-radius: 16px; padding: 32px; width: 90%; max-width: 460px; max-height: 85vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.3); }
+.print-preview h2 { font-size: 22px; letter-spacing: 6px; text-align: center; margin: 0 0 20px; color: #222; }
+.print-preview .pp-label { font-size: 12px; font-weight: 700; letter-spacing: 3px; color: #999; margin: 20px 0 8px; }
+.print-preview .pp-counts { display: flex; gap: 10px; flex-wrap: wrap; }
+.print-preview .pp-chip { display: inline-flex; align-items: center; gap: 6px; background: #f5f5f5; border-radius: 6px; padding: 4px 10px; font-size: 15px; color: #333; }
+.print-preview .pp-rules { display: flex; flex-direction: column; gap: 8px; }
+.print-preview .pp-rule { display: flex; align-items: center; gap: 6px; }
+.print-preview .pp-grid { display: grid; grid-template-columns: repeat(4, 80px); gap: 6px; justify-content: center; margin: 16px 0; }
+.print-preview .pp-tile { width: 80px; height: 80px; border-radius: 10px; }
+.print-preview .pp-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.print-preview .pp-btn { padding: 10px 24px; border-radius: 10px; border: 1px solid #ddd; background: #f5f5f5; color: #555; font-size: 14px; font-weight: 700; letter-spacing: 1px; cursor: pointer; }
+.print-preview .pp-btn-print { background: #457B9D; border-color: #457B9D; color: #fff; }
+
+/* ===== PRINT MEDIA ===== */
+@media print {
+  body { background: #fff !important; padding: 20px !important; display: block !important; }
+  #app, .modal-overlay, .print-preview-overlay { display: none !important; }
+  #print-content { display: block !important; }
+}
+#print-content { display: none; max-width: 500px; margin: 0 auto; font-family: 'DM Sans','Segoe UI',sans-serif; color: #222; }
+#print-content h2 { font-size: 22px; letter-spacing: 6px; text-align: center; margin: 0 0 20px; }
+#print-content .pp-label { font-size: 12px; font-weight: 700; letter-spacing: 3px; color: #999; margin: 20px 0 8px; }
+#print-content .pp-counts { display: flex; gap: 10px; flex-wrap: wrap; }
+#print-content .pp-chip { display: inline-flex; align-items: center; gap: 6px; background: #f5f5f5; border-radius: 6px; padding: 4px 10px; font-size: 15px; color: #333; }
+#print-content .pp-rules { display: flex; flex-direction: column; gap: 8px; }
+#print-content .pp-rule { display: flex; align-items: center; gap: 6px; }
+#print-content .pp-grid { display: grid; grid-template-columns: repeat(4, 80px); gap: 6px; justify-content: center; margin: 16px 0; }
+#print-content .pp-tile { width: 80px; height: 80px; border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<div id="edit-badge">EDIT MODE</div>
+<div id="app">
+  <h1 class="title">COLOR TILES <span style="font-size:11px;font-weight:400;opacity:0.5;letter-spacing:1px">V6</span></h1>
+
+  <!-- Notation -->
+  <div class="panel">
+    <div class="panel-header">NOTATION</div>
+    <div class="panel-body">
+      <div class="explain-row"><span class="explain-text"><b>Adjacent</b> squares share a side.</span></div>
+      <div class="divider"></div>
+      <div class="explain-row">
+        <span class="mini-sq" style="background:#E63946"></span>
+        <span class="arrow">⟶</span>
+        <span class="mini-sq" style="background:#457B9D"></span>
+        <span class="explain-text">means "Each red square is adjacent to a blue square"</span>
+      </div>
+      <div class="explain-row" style="margin-top:8px">
+        <span class="mini-sq" style="background:#F4D35E"></span>
+        <span class="arrow">⟶</span>
+        <span class="rule-count">2</span>
+        <span class="mini-sq" style="background:#457B9D"></span>
+        <span class="explain-text">means "Each yellow square is adjacent to 2 blue squares"</span>
+      </div>
+      <div class="explain-row" style="margin-top:8px">
+        <span class="mini-sq" style="background:#E63946"></span>
+        <span class="arrow">⟶<span class="slash"></span></span>
+        <span class="mini-sq" style="background:#457B9D"></span>
+        <span class="explain-text">means "No red square is adjacent to a blue square"</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Puzzle Definition -->
+  <div class="panel">
+    <div class="panel-header">PUZZLE</div>
+    <div class="panel-body">
+      <div class="section-label">SQUARES BY COLOR</div>
+      <div id="counts-row" class="counts-row"></div>
+      <div id="total-row" class="total-row"></div>
+      <div class="divider"></div>
+      <div class="section-label">RULES</div>
+      <div id="rules-col" class="rules-col"></div>
+      <button class="add-rule-btn edit-only" onclick="addRule()">+ Add Rule</button>
+    </div>
+  </div>
+
+  <!-- Solved Banner -->
+  <div id="solved-banner" class="solved-banner">
+    <span style="font-size:14px">✦</span> SOLVED <span style="font-size:14px">✦</span>
+  </div>
+
+  <!-- Grid -->
+  <div id="grid" class="grid"></div>
+
+  <!-- Ghost for dragging -->
+  <div id="ghost" class="ghost"><div class="shine"></div></div>
+
+  <!-- Controls -->
+  <div class="btn-row">
+    <button class="btn" onclick="shuffle()">Shuffle</button>
+    <button class="btn btn-check" id="check-btn" onclick="toggleCheck()">Check</button>
+    <button class="btn" onclick="showModal('save')" style="display:none" id="save-btn">Save</button>
+    <button class="btn" onclick="document.getElementById('load-file-input').click()">Load</button>
+    <input type="file" id="load-file-input" accept=".json" style="display:none" onchange="loadFile(event)">
+    <button class="btn btn-print" onclick="showPrintPreview()">Print</button>
+    <button class="btn" onclick="showSolutions()" style="display:none" id="solutions-btn">Solutions</button>
+  </div>
+</div>
+
+<!-- Save Modal -->
+<div id="save-modal" class="modal-overlay" onclick="hideModal('save')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Save Puzzle</h3>
+    <input id="save-input" placeholder="Puzzle name..." onkeydown="if(event.key==='Enter')savePuzzle()">
+    <div class="modal-btns">
+      <button class="btn" onclick="hideModal('save')">Cancel</button>
+      <button class="btn btn-check" onclick="savePuzzle()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Load Modal -->
+<div id="load-modal" class="modal-overlay" onclick="hideModal('load')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Load Puzzle</h3>
+    <div id="puzzle-list" class="puzzle-list"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="hideModal('load')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Solutions Modal -->
+<div id="solutions-overlay" onclick="hideSolutions()" style="
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
+  z-index:1000; overflow-y:auto; padding:24px;">
+  <div onclick="event.stopPropagation()" style="
+    background:#1a1a2e; border-radius:14px; max-width:860px; margin:0 auto;
+    padding:24px; color:#eee;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <div>
+        <div style="font-size:18px; font-weight:700;" id="sol-title">Solutions</div>
+        <div style="font-size:13px; color:#aaa; margin-top:3px;" id="sol-subtitle"></div>
+      </div>
+      <button onclick="hideSolutions()" style="
+        background:none; border:1px solid #555; color:#aaa; border-radius:6px;
+        padding:6px 14px; cursor:pointer; font-size:14px;">✕ Close</button>
+    </div>
+    <div id="sol-status" style="font-size:14px; color:#f4d35e; margin-bottom:14px; display:none"></div>
+    <div id="sol-grid" style="display:flex; flex-wrap:wrap; gap:14px;"></div>
+  </div>
+</div>
+
+<!-- Print Preview Modal -->
+<div id="print-preview-overlay" class="print-preview-overlay" onclick="hidePrintPreview()">
+  <div class="print-preview" onclick="event.stopPropagation()">
+    <div id="print-preview-content"></div>
+    <div class="pp-btns">
+      <button class="pp-btn" onclick="hidePrintPreview()">Cancel</button>
+      <button class="pp-btn pp-btn-print" onclick="doPrint()">Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden print content (only visible in @media print) -->
+<div id="print-content"></div>
+
+<script>
+/* ═══════ DATA ═══════ */
+const GRID = 4, TOTAL = 16;
+const COLORS = ['R','B','Y'];
+const PAL = {
+  R: { bg:'#E63946', hi:'#FF6B7A', shadow:'rgba(230,57,70,0.45)' },
+  B: { bg:'#457B9D', hi:'#6BA3C7', shadow:'rgba(69,123,157,0.45)' },
+  Y: { bg:'#F4D35E', hi:'#FBE68A', shadow:'rgba(244,211,94,0.45)' },
+};
+const CNAME = { R:'Red', B:'Blue', Y:'Yellow' };
+
+const DEFAULT_COUNTS = { R:4, B:8, Y:4 };
+const DEFAULT_RULES = [
+  { from:'R', toColor:'B', count:2 },
+  { from:'Y', toColor:'Y', count:2 },
+  { from:'B', toColor:'R', count:1 },
+  { from:'R', toColor:'R', not:true },
+];
+const LAST_STATE_KEY = 'colorTileLastState';
+
+function saveLastState() {
+  try { localStorage.setItem(LAST_STATE_KEY, JSON.stringify({ counts, rules })); } catch(e) {}
+}
+
+function loadLastState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LAST_STATE_KEY));
+    if (saved && saved.counts && saved.rules) return saved;
+  } catch(e) {}
+  return null;
+}
+
+const lastState = loadLastState();
+let counts = lastState ? {...lastState.counts} : {...DEFAULT_COUNTS};
+let rules  = lastState ? lastState.rules.map(r=>({...r})) : DEFAULT_RULES.map(r=>({...r}));
+let tiles = [];
+let checking = false;
+
+function nextColor(c) { return COLORS[(COLORS.indexOf(c)+1)%3]; }
+
+function buildTiles() {
+  tiles = [];
+  let id = 0;
+  for (const [c,n] of Object.entries(counts)) for (let i=0;i<n;i++) tiles.push({id:id++,color:c});
+  while (tiles.length < TOTAL) tiles.push({id:tiles.length, color:'R'});
+  tiles = tiles.slice(0, TOTAL);
+  shuffleArray(tiles);
+}
+
+function shuffleArray(a) { for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]; } }
+
+function getNeighbors(idx) {
+  const r=Math.floor(idx/GRID), c=idx%GRID, n=[];
+  if(r>0)n.push(idx-GRID); if(r<GRID-1)n.push(idx+GRID);
+  if(c>0)n.push(idx-1); if(c<GRID-1)n.push(idx+1);
+  return n;
+}
+
+function checkTile(idx) {
+  const color = tiles[idx].color;
+  const nc = getNeighbors(idx).map(n=>tiles[n].color);
+  for (const rule of rules) {
+    if (rule.from !== color) continue;
+    const actual = nc.filter(c=>c===rule.toColor).length;
+    if (rule.not) { if (actual > 0) return false; }
+    else { if (actual < rule.count) return false; }
+  }
+  return true;
+}
+
+/* ═══════ RENDER ═══════ */
+function renderCounts() {
+  const row = document.getElementById('counts-row');
+  const total = Object.values(counts).reduce((a,b)=>a+b,0);
+  row.innerHTML = Object.entries(counts).map(([c,n]) => `
+    <div class="count-chip">
+      ${editMode ? `<button class="sm-btn" onclick="adjustCount('${c}',-1)">−</button>` : ''}
+      <span class="count-dot" style="background:${PAL[c].bg}"></span>
+      <span class="count-name">${CNAME[c]}</span>
+      <span class="count-num">${n}</span>
+      ${editMode ? `<button class="sm-btn" onclick="adjustCount('${c}',1)">+</button>` : ''}
+    </div>
+  `).join('');
+  document.getElementById('total-row').textContent = `Total: ${total} / ${TOTAL}`;
+}
+
+function makeArrowHTML(crossed, clickable, clickAction) {
+  const cls = clickable ? 'arrow clickable' : 'arrow';
+  const onclick = clickAction ? ` onclick="${clickAction}"` : '';
+  return `<span class="${cls}"${onclick}>⟶${crossed ? '<span class="slash"></span>' : ''}</span>`;
+}
+
+function makeSqHTML(color, clickable, clickAction) {
+  const cls = clickable ? 'mini-sq clickable' : 'mini-sq';
+  const onclick = clickAction ? ` onclick="${clickAction}"` : '';
+  return `<span class="${cls}" style="background:${PAL[color].bg}"${onclick}></span>`;
+}
+
+function renderRules() {
+  const col = document.getElementById('rules-col');
+  col.innerHTML = rules.map((r,i) => {
+    let countHTML = '';
+    if (!r.not) {
+      countHTML = editMode ? `
+        <button class="tiny-btn" onclick="adjustRuleCount(${i},-1)">−</button>
+        <span class="rule-count">${r.count}</span>
+        <button class="tiny-btn" onclick="adjustRuleCount(${i},1)">+</button>
+      ` : `<span class="rule-count">${r.count}</span>`;
+    }
+    const fromSq = makeSqHTML(r.from,    editMode, editMode ? `cycleColor(${i},'from')`    : null);
+    const toSq   = makeSqHTML(r.toColor, editMode, editMode ? `cycleColor(${i},'toColor')` : null);
+    const arrow  = makeArrowHTML(r.not,  editMode, editMode ? `toggleNot(${i})`            : null);
+    const delBtn = editMode ? `<button class="del-btn" onclick="deleteRule(${i})">×</button>` : '';
+    return `<div class="rule-row">${fromSq}${arrow}${countHTML}${toSq}${delBtn}</div>`;
+  }).join('');
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = tiles.map((t,i) => {
+    const p = PAL[t.color];
+    return `<div class="tile" data-idx="${i}"
+      style="background:linear-gradient(135deg,${p.hi},${p.bg});box-shadow:0 2px 8px ${p.shadow}"
+      onpointerdown="onDown(event,${i})">
+      <div class="shine"></div>
+      <span class="mark" id="mark-${i}"></span>
+    </div>`;
+  }).join('');
+}
+
+function renderCheck() {
+  const banner = document.getElementById('solved-banner');
+  if (!checking) {
+    banner.classList.remove('show');
+    tiles.forEach((_,i) => {
+      const el = document.querySelector(`.tile[data-idx="${i}"]`);
+      if (el) { el.style.borderColor = 'transparent'; const m = document.getElementById(`mark-${i}`); if(m) m.style.display='none'; }
+    });
+    return;
+  }
+  let allPass = true;
+  tiles.forEach((_,i) => {
+    const pass = checkTile(i);
+    if (!pass) allPass = false;
+    const el = document.querySelector(`.tile[data-idx="${i}"]`);
+    const m = document.getElementById(`mark-${i}`);
+    if (el) el.style.borderColor = pass ? 'rgba(46,213,115,0.85)' : 'rgba(255,71,87,0.85)';
+    if (m) { m.textContent = pass ? '✓' : '✕'; m.style.display = 'block'; }
+  });
+  banner.classList.toggle('show', allPass);
+}
+
+function renderAll() { renderCounts(); renderRules(); renderGrid(); renderCheck(); }
+
+/* ═══════ ACTIONS ═══════ */
+function adjustCount(color, delta) {
+  const total = Object.values(counts).reduce((a,b)=>a+b,0);
+  const nv = counts[color] + delta;
+  if (nv < 0 || total + delta > TOTAL || total + delta < 0) return;
+  counts[color] = nv;
+  checking = false;
+  document.getElementById('check-btn').textContent = 'Check';
+  saveLastState(); buildTiles(); renderAll();
+}
+
+function cycleColor(idx, field) { rules[idx][field] = nextColor(rules[idx][field]); checking=false; document.getElementById('check-btn').textContent='Check'; saveLastState(); renderRules(); renderCheck(); }
+function toggleNot(idx) { rules[idx].not = !rules[idx].not; checking=false; document.getElementById('check-btn').textContent='Check'; saveLastState(); renderRules(); renderCheck(); }
+function adjustRuleCount(idx, delta) { rules[idx].count = Math.max(1, Math.min(4, (rules[idx].count||1)+delta)); checking=false; document.getElementById('check-btn').textContent='Check'; saveLastState(); renderRules(); renderCheck(); }
+function deleteRule(idx) { rules.splice(idx,1); checking=false; document.getElementById('check-btn').textContent='Check'; saveLastState(); renderRules(); renderCheck(); }
+function addRule() { rules.push({from:'R',toColor:'B',count:1}); saveLastState(); renderRules(); }
+
+function shuffle() { shuffleArray(tiles); checking=false; document.getElementById('check-btn').textContent='Check'; renderGrid(); renderCheck(); }
+function toggleCheck() {
+  checking = !checking;
+  document.getElementById('check-btn').textContent = checking ? 'Hide' : 'Check';
+  renderCheck();
+}
+
+/* ═══════ DRAG & DROP ═══════ */
+let dragIdx = null, overIdx = null, dragOffset = {x:0,y:0};
+const ghost = document.getElementById('ghost');
+
+function onDown(e, idx) {
+  e.preventDefault();
+  const el = e.currentTarget;
+  const rect = el.getBoundingClientRect();
+  dragIdx = idx;
+  dragOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  el.setPointerCapture(e.pointerId);
+  el.style.opacity = '0.3';
+
+  const p = PAL[tiles[idx].color];
+  ghost.style.width = rect.width + 'px';
+  ghost.style.height = rect.height + 'px';
+  ghost.style.background = `linear-gradient(135deg,${p.hi},${p.bg})`;
+  ghost.style.boxShadow = `0 16px 48px ${p.shadow}, 0 0 0 3px rgba(0,0,0,0.08)`;
+  ghost.style.left = (e.clientX - dragOffset.x) + 'px';
+  ghost.style.top = (e.clientY - dragOffset.y) + 'px';
+  ghost.style.display = 'flex';
+
+  el.onpointermove = onMove;
+  el.onpointerup = onUp;
+}
+
+function onMove(e) {
+  if (dragIdx === null) return;
+  ghost.style.left = (e.clientX - dragOffset.x) + 'px';
+  ghost.style.top = (e.clientY - dragOffset.y) + 'px';
+
+  const gridEl = document.getElementById('grid');
+  const rect = gridEl.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  const gap = 6, tw = (rect.width - gap*3) / 4;
+  const col = Math.floor(x / (tw+gap)), row = Math.floor(y / (tw+gap));
+  const newOver = (col>=0 && col<4 && row>=0 && row<4) ? row*4+col : null;
+
+  if (newOver !== overIdx) {
+    if (overIdx !== null && overIdx !== dragIdx) {
+      const prev = document.querySelector(`.tile[data-idx="${overIdx}"]`);
+      if (prev) prev.style.transform = 'scale(1)';
+    }
+    overIdx = newOver;
+    if (overIdx !== null && overIdx !== dragIdx) {
+      const cur = document.querySelector(`.tile[data-idx="${overIdx}"]`);
+      if (cur) cur.style.transform = 'scale(0.9)';
+    }
+  }
+}
+
+function onUp(e) {
+  if (dragIdx === null) return;
+  const el = document.querySelector(`.tile[data-idx="${dragIdx}"]`);
+  if (el) { el.style.opacity = '1'; el.onpointermove = null; el.onpointerup = null; }
+
+  if (overIdx !== null && overIdx !== dragIdx) {
+    [tiles[dragIdx], tiles[overIdx]] = [tiles[overIdx], tiles[dragIdx]];
+    const prev = document.querySelector(`.tile[data-idx="${overIdx}"]`);
+    if (prev) prev.style.transform = 'scale(1)';
+  }
+
+  ghost.style.display = 'none';
+  dragIdx = null; overIdx = null;
+  renderGrid(); renderCheck();
+}
+
+/* ═══════ SAVE / LOAD ═══════ */
+function showModal(which) {
+  document.getElementById(which+'-modal').classList.add('show');
+  if (which === 'save') document.getElementById('save-input').focus();
+  if (which === 'load') renderPuzzleList();
+}
+function hideModal(which) { document.getElementById(which+'-modal').classList.remove('show'); }
+
+function getSaved() { try { return JSON.parse(localStorage.getItem('colorTilePuzzles')||'[]'); } catch(e){ return []; } }
+function setSaved(list) { try { localStorage.setItem('colorTilePuzzles', JSON.stringify(list)); } catch(e){} }
+
+function isSolution() {
+  return tiles.every((_, idx) => checkTile(idx));
+}
+
+function savePuzzle() {
+  const name = document.getElementById('save-input').value.trim();
+  if (!name) return;
+  if (!isSolution()) {
+    alert('The current tile arrangement does not satisfy all the rules — please solve the puzzle before saving.');
+    return;
+  }
+  const puzzle = { name, counts:{...counts}, rules:rules.map(r=>({...r})), tiles:tiles.map(t=>({...t})) };
+  const json = JSON.stringify(puzzle, null, 2);
+  const blob = new Blob([json], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name.replace(/[^a-zA-Z0-9_\- ]/g, '_') + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  document.getElementById('save-input').value = '';
+  hideModal('save');
+  saveLastState();
+}
+
+function loadFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const puzzle = JSON.parse(e.target.result);
+      if (puzzle.counts && puzzle.rules) {
+        counts = {...puzzle.counts};
+        rules = puzzle.rules.map(r=>({...r}));
+        if (puzzle.tiles && puzzle.tiles.length) {
+          tiles = puzzle.tiles.map(t=>({...t}));
+        } else {
+          buildTiles();
+        }
+        checking = false;
+        document.getElementById('check-btn').textContent = 'Check';
+        saveLastState(); renderAll();
+      }
+    } catch(err) { alert('Invalid puzzle file.'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+/* ═══════ PRINT ═══════ */
+function buildPrintHTML() {
+  const countsHTML = Object.entries(counts).map(([c,n]) =>
+    `<span class="pp-chip"><span class="mini-sq" style="width:14px;height:14px;border-radius:3px;background:${PAL[c].bg}"></span><b>${CNAME[c]}</b> ×${n}</span>`
+  ).join('');
+
+  const rulesHTML = rules.map(r => {
+    const from = `<span class="mini-sq" style="background:${PAL[r.from].bg}"></span>`;
+    const to = `<span class="mini-sq" style="background:${PAL[r.toColor].bg}"></span>`;
+    const arrow = r.not
+      ? `<span class="arrow">⟶<span class="slash"></span></span>`
+      : `<span class="arrow">⟶</span>`;
+    const cnt = (!r.not && r.count > 1) ? `<span class="rule-count">${r.count}</span>` : '';
+    return `<div class="pp-rule">${from}${arrow}${cnt}${to}</div>`;
+  }).join('');
+
+  const gridHTML = tiles.map(t =>
+    `<div class="pp-tile" style="background:${PAL[t.color].bg}"></div>`
+  ).join('');
+
+  return `
+    <h2>COLOR TILES</h2>
+    <div class="pp-label">SQUARES BY COLOR</div>
+    <div class="pp-counts">${countsHTML}</div>
+    <div class="pp-label">RULES</div>
+    <div class="pp-rules">${rulesHTML}</div>
+    <div class="pp-label">SOLUTION</div>
+    <div class="pp-grid">${gridHTML}</div>
+  `;
+}
+
+function showPrintPreview() {
+  const html = buildPrintHTML();
+  document.getElementById('print-preview-content').innerHTML = html;
+  document.getElementById('print-preview-overlay').classList.add('show');
+}
+
+function hidePrintPreview() {
+  document.getElementById('print-preview-overlay').classList.remove('show');
+}
+
+function doPrint() {
+  document.getElementById('print-content').innerHTML = buildPrintHTML();
+  hidePrintPreview();
+  setTimeout(() => window.print(), 100);
+}
+
+/* ═══════ SOLVER ═══════ */
+
+function getNeighborList(idx) {
+  const r = Math.floor(idx/GRID), c = idx%GRID, n = [];
+  if (r > 0)       n.push(idx - GRID);
+  if (r < GRID-1)  n.push(idx + GRID);
+  if (c > 0)       n.push(idx - 1);
+  if (c < GRID-1)  n.push(idx + 1);
+  return n;
+}
+const NEIGHBOR_LIST = Array.from({length:TOTAL}, (_, i) => getNeighborList(i));
+
+// D4 symmetry group permutations
+function makePerm(fn) {
+  const p = new Array(TOTAL);
+  for (let i = 0; i < TOTAL; i++) {
+    const r = Math.floor(i/GRID), c = i%GRID;
+    const [nr, nc] = fn(r, c);
+    p[i] = nr*GRID + nc;
+  }
+  return p;
+}
+const G = GRID - 1;
+const SYMMETRIES = [
+  makePerm((r,c) => [r,      c     ]),
+  makePerm((r,c) => [c,      G-r   ]),
+  makePerm((r,c) => [G-r,    G-c   ]),
+  makePerm((r,c) => [G-c,    r     ]),
+  makePerm((r,c) => [G-r,    c     ]),
+  makePerm((r,c) => [r,      G-c   ]),
+  makePerm((r,c) => [c,      r     ]),
+  makePerm((r,c) => [G-c,    G-r   ]),
+];
+
+function canonical(grid) {
+  let best = null;
+  for (const perm of SYMMETRIES) {
+    const t = perm.map(i => grid[i]);
+    if (!best || t.join('') < best.join('')) best = t;
+  }
+  return best.join('');
+}
+
+function solveGrid(ruleset, countset) {
+  const colorKeys = Object.keys(countset).filter(k => countset[k] > 0);
+  const remaining = {...countset};
+  const grid = new Array(TOTAL).fill(null);
+  const seen = new Set();
+  const solutions = [];
+
+  // Preprocess rules
+  const notPairs = new Set();
+  const posReqs = {};
+  for (const r of ruleset) {
+    if (r.not) {
+      notPairs.add(r.from + '>' + r.toColor);
+    } else {
+      if (!posReqs[r.from]) posReqs[r.from] = [];
+      posReqs[r.from].push({ to: r.toColor, count: r.count || 1 });
+    }
+  }
+
+  function bt(pos) {
+    if (pos === TOTAL) {
+      // Final check: positive rules satisfied?
+      for (let i = 0; i < TOTAL; i++) {
+        const fc = grid[i];
+        const reqs = posReqs[fc] || [];
+        const nc = NEIGHBOR_LIST[i].map(n => grid[n]);
+        for (const { to, count } of reqs) {
+          if (nc.filter(c => c === to).length < count) return;
+        }
+      }
+      const canon = canonical(grid);
+      if (!seen.has(canon)) { seen.add(canon); solutions.push([...grid]); }
+      return;
+    }
+
+    const tried = new Set();
+    for (const color of colorKeys) {
+      if ((remaining[color] || 0) === 0 || tried.has(color)) continue;
+      tried.add(color);
+
+      const placedNbrs = NEIGHBOR_LIST[pos]
+        .filter(n => n < pos && grid[n] !== null)
+        .map(n => ({ n, c: grid[n] }));
+
+      // Prune: not-rules
+      let skip = false;
+      for (const { c: nc } of placedNbrs) {
+        if (notPairs.has(color+'>'+nc) || notPairs.has(nc+'>'+color)) { skip=true; break; }
+      }
+      if (skip) continue;
+
+      // Prune: positive rules for this color
+      const futureNbrs = NEIGHBOR_LIST[pos].filter(n => n > pos).length;
+      for (const { to, count } of (posReqs[color] || [])) {
+        const have = placedNbrs.filter(({c}) => c === to).length;
+        if (have + futureNbrs < count) { skip=true; break; }
+      }
+      if (skip) continue;
+
+      // Prune: would placing color doom a placed neighbor?
+      for (const { n, c: nc } of placedNbrs) {
+        for (const { to, count } of (posReqs[nc] || [])) {
+          let have = NEIGHBOR_LIST[n].filter(j => grid[j] === to).length;
+          if (color === to) have++;
+          if (have >= count) continue;
+          const future = NEIGHBOR_LIST[n].filter(j => j > pos).length;
+          if (have + future < count) { skip=true; break; }
+        }
+        if (skip) break;
+      }
+      if (skip) continue;
+
+      grid[pos] = color;
+      remaining[color]--;
+      bt(pos + 1);
+      grid[pos] = null;
+      remaining[color]++;
+    }
+  }
+
+  bt(0);
+  return solutions;
+}
+
+/* ═══════ SOLUTIONS UI ═══════ */
+function showSolutions() {
+  const overlay = document.getElementById('solutions-overlay');
+  const solGrid = document.getElementById('sol-grid');
+  const solTitle = document.getElementById('sol-title');
+  const solSubtitle = document.getElementById('sol-subtitle');
+  const solStatus = document.getElementById('sol-status');
+
+  overlay.style.display = 'block';
+  solGrid.innerHTML = '';
+  solStatus.style.display = 'block';
+  solStatus.textContent = 'Solving…';
+  solTitle.textContent = 'Solutions';
+  solSubtitle.textContent = '';
+
+  // Run solver asynchronously so UI updates first
+  setTimeout(() => {
+    const solutions = solveGrid(rules, counts);
+    solStatus.style.display = 'none';
+    const n = solutions.length;
+    solTitle.textContent = `${n} Solution${n !== 1 ? 's' : ''}`;
+    const ruleDesc = rules.map(r =>
+      r.not ? `${r.from} ↛ ${r.toColor}` : `${r.from} → ${r.toColor} (≥${r.count||1})`
+    ).join('  |  ');
+    solSubtitle.textContent = ruleDesc;
+
+    if (n === 0) {
+      solGrid.innerHTML = '<div style="color:#f4a0a0;font-size:15px">No solutions exist for this puzzle.</div>';
+      return;
+    }
+
+    const CELL = 28;
+    const SIZE = CELL * GRID;
+    solGrid.innerHTML = solutions.map((sol, i) => {
+      const cells = sol.map((color, idx) => {
+        const r = Math.floor(idx/GRID), c = idx%GRID;
+        return `<rect x="${c*CELL}" y="${r*CELL}" width="${CELL}" height="${CELL}"
+          fill="${PAL[color].bg}" stroke="#333" stroke-width="1"/>`;
+      }).join('');
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div style="font-size:11px;color:#666">${i+1}</div>
+        <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">${cells}</svg>
+      </div>`;
+    }).join('');
+  }, 30);
+}
+
+function hideSolutions() {
+  document.getElementById('solutions-overlay').style.display = 'none';
+}
+
+/* ═══════ EDIT MODE ═══════ */
+let editMode = false;
+
+function setEditMode(on) {
+  editMode = on;
+  document.body.classList.toggle('edit-mode', on);
+  document.getElementById('save-btn').style.display = on ? '' : 'none';
+  document.getElementById('solutions-btn').style.display = on ? '' : 'none';
+  renderCounts();
+  renderRules();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === '`') { e.preventDefault(); setEditMode(!editMode); }
+});
+
+/* ═══════ INIT ═══════ */
+buildTiles();
+renderAll();
+</script>
+</body>
+</html>
