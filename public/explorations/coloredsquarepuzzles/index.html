@@ -142,7 +142,7 @@ body.edit-mode #edit-badge { display: block; }
 
 <div id="edit-badge">EDIT MODE</div>
 <div id="app">
-  <h1 class="title">COLOR TILES <span style="font-size:11px;font-weight:400;opacity:0.5;letter-spacing:1px">V9</span></h1>
+  <h1 class="title">COLOR TILES <span style="font-size:11px;font-weight:400;opacity:0.5;letter-spacing:1px">V10</span></h1>
 
   <!-- Notation -->
   <div class="panel">
@@ -309,7 +309,7 @@ const COLORS = ['R','B','Y'];
 const CNAME = { R:'Red', B:'Blue', Y:'Yellow' };
 
 const COLOR_KEY = 'colorTileColors';
-const DEFAULT_SCREEN = { R:'#E63946', B:'#457B9D', Y:'#F4D35E' };
+const DEFAULT_SCREEN = { R:'#EE1122', B:'#2255CC', Y:'#FFEC00' };
 const DEFAULT_PRINT  = { R:'#FF0000', B:'#4D4DFF', Y:'#FFFF00' };
 
 function loadColors() {
@@ -454,9 +454,14 @@ function renderRules() {
 function renderGrid() {
   const grid = document.getElementById('grid');
   grid.innerHTML = tiles.map((t,i) => {
-    const p = PAL[t.color];
+    const bg = PAL[t.color].bg;
+    const style = [
+      `background: linear-gradient(to right, transparent 75%, rgba(0,0,0,0.2) 100%),`,
+      `linear-gradient(to bottom, transparent 75%, rgba(0,0,0,0.25) 100%),`,
+      `${bg}`,
+    ].join(' ');
     return `<div class="tile" data-idx="${i}"
-      style="background:linear-gradient(135deg,${p.hi},${p.bg});box-shadow:0 2px 8px ${p.shadow}"
+      style="${style};box-shadow:0 2px 8px rgba(0,0,0,0.18)"
       onpointerdown="onDown(event,${i})">
       <div class="shine"></div>
       <span class="mark" id="mark-${i}"></span>
@@ -526,10 +531,11 @@ function onDown(e, idx) {
   el.style.opacity = '0.3';
 
   const p = PAL[tiles[idx].color];
+  const bg = p.bg;
   ghost.style.width = rect.width + 'px';
   ghost.style.height = rect.height + 'px';
-  ghost.style.background = `linear-gradient(135deg,${p.hi},${p.bg})`;
-  ghost.style.boxShadow = `0 16px 48px ${p.shadow}, 0 0 0 3px rgba(0,0,0,0.08)`;
+  ghost.style.background = `linear-gradient(to right, transparent 75%, rgba(0,0,0,0.2) 100%), linear-gradient(to bottom, transparent 75%, rgba(0,0,0,0.25) 100%), ${bg}`;
+  ghost.style.boxShadow = `0 16px 48px rgba(0,0,0,0.3), 0 0 0 3px rgba(0,0,0,0.08)`;
   ghost.style.left = (e.clientX - dragOffset.x) + 'px';
   ghost.style.top = (e.clientY - dragOffset.y) + 'px';
   ghost.style.display = 'flex';
