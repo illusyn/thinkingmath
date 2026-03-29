@@ -71,6 +71,22 @@ h1.title { color: #eee; font-size: 28px; font-weight: 800; letter-spacing: 8px; 
 
 /* ===== BOTTOM BUTTONS ===== */
 .btn-row { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; justify-content: center; }
+
+/* Edit mode */
+.edit-only { display: none !important; }
+body.edit-mode .edit-only { display: flex !important; }
+body.edit-mode .edit-only-inline { display: inline !important; }
+.edit-only-inline { display: none !important; }
+
+#edit-badge {
+  display: none;
+  position: fixed; top: 12px; right: 12px;
+  background: #e63946; color: #fff;
+  font-size: 11px; font-weight: 800; letter-spacing: 1px;
+  padding: 4px 10px; border-radius: 6px;
+  z-index: 999;
+}
+body.edit-mode #edit-badge { display: block; }
 .btn { padding: 10px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: #ccc; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
 .btn:hover { background: rgba(255,255,255,0.14); }
 .btn-check { background: rgba(46,213,115,0.12); border-color: rgba(46,213,115,0.3); color: #2ed573; }
@@ -124,8 +140,9 @@ h1.title { color: #eee; font-size: 28px; font-weight: 800; letter-spacing: 8px; 
 </head>
 <body>
 
+<div id="edit-badge">EDIT MODE</div>
 <div id="app">
-  <h1 class="title">COLOR TILES</h1>
+  <h1 class="title">COLOR TILES <span style="font-size:11px;font-weight:400;opacity:0.5;letter-spacing:1px">V6</span></h1>
 
   <!-- Notation -->
   <div class="panel">
@@ -165,7 +182,7 @@ h1.title { color: #eee; font-size: 28px; font-weight: 800; letter-spacing: 8px; 
       <div class="divider"></div>
       <div class="section-label">RULES</div>
       <div id="rules-col" class="rules-col"></div>
-      <button class="add-rule-btn" onclick="addRule()">+ Add Rule</button>
+      <button class="add-rule-btn edit-only" onclick="addRule()">+ Add Rule</button>
     </div>
   </div>
 
@@ -184,10 +201,11 @@ h1.title { color: #eee; font-size: 28px; font-weight: 800; letter-spacing: 8px; 
   <div class="btn-row">
     <button class="btn" onclick="shuffle()">Shuffle</button>
     <button class="btn btn-check" id="check-btn" onclick="toggleCheck()">Check</button>
-    <button class="btn" onclick="showModal('save')">Save</button>
+    <button class="btn" onclick="showModal('save')" style="display:none" id="save-btn">Save</button>
     <button class="btn" onclick="document.getElementById('load-file-input').click()">Load</button>
     <input type="file" id="load-file-input" accept=".json" style="display:none" onchange="loadFile(event)">
     <button class="btn btn-print" onclick="showPrintPreview()">Print</button>
+    <button class="btn" onclick="showSolutions()" style="display:none" id="solutions-btn">Solutions</button>
   </div>
 </div>
 
@@ -211,6 +229,27 @@ h1.title { color: #eee; font-size: 28px; font-weight: 800; letter-spacing: 8px; 
     <div class="modal-btns">
       <button class="btn" onclick="hideModal('load')">Close</button>
     </div>
+  </div>
+</div>
+
+<!-- Solutions Modal -->
+<div id="solutions-overlay" onclick="hideSolutions()" style="
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
+  z-index:1000; overflow-y:auto; padding:24px;">
+  <div onclick="event.stopPropagation()" style="
+    background:#1a1a2e; border-radius:14px; max-width:860px; margin:0 auto;
+    padding:24px; color:#eee;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <div>
+        <div style="font-size:18px; font-weight:700;" id="sol-title">Solutions</div>
+        <div style="font-size:13px; color:#aaa; margin-top:3px;" id="sol-subtitle"></div>
+      </div>
+      <button onclick="hideSolutions()" style="
+        background:none; border:1px solid #555; color:#aaa; border-radius:6px;
+        padding:6px 14px; cursor:pointer; font-size:14px;">✕ Close</button>
+    </div>
+    <div id="sol-status" style="font-size:14px; color:#f4d35e; margin-bottom:14px; display:none"></div>
+    <div id="sol-grid" style="display:flex; flex-wrap:wrap; gap:14px;"></div>
   </div>
 </div>
 
@@ -304,11 +343,11 @@ function renderCounts() {
   const total = Object.values(counts).reduce((a,b)=>a+b,0);
   row.innerHTML = Object.entries(counts).map(([c,n]) => `
     <div class="count-chip">
-      <button class="sm-btn" onclick="adjustCount('${c}',-1)">−</button>
+      ${editMode ? `<button class="sm-btn" onclick="adjustCount('${c}',-1)">−</button>` : ''}
       <span class="count-dot" style="background:${PAL[c].bg}"></span>
       <span class="count-name">${CNAME[c]}</span>
       <span class="count-num">${n}</span>
-      <button class="sm-btn" onclick="adjustCount('${c}',1)">+</button>
+      ${editMode ? `<button class="sm-btn" onclick="adjustCount('${c}',1)">+</button>` : ''}
     </div>
   `).join('');
   document.getElementById('total-row').textContent = `Total: ${total} / ${TOTAL}`;
@@ -331,19 +370,17 @@ function renderRules() {
   col.innerHTML = rules.map((r,i) => {
     let countHTML = '';
     if (!r.not) {
-      countHTML = `
+      countHTML = editMode ? `
         <button class="tiny-btn" onclick="adjustRuleCount(${i},-1)">−</button>
         <span class="rule-count">${r.count}</span>
         <button class="tiny-btn" onclick="adjustRuleCount(${i},1)">+</button>
-      `;
+      ` : `<span class="rule-count">${r.count}</span>`;
     }
-    return `<div class="rule-row">
-      ${makeSqHTML(r.from, true, `cycleColor(${i},'from')`)}
-      ${makeArrowHTML(r.not, true, `toggleNot(${i})`)}
-      ${countHTML}
-      ${makeSqHTML(r.toColor, true, `cycleColor(${i},'toColor')`)}
-      <button class="del-btn" onclick="deleteRule(${i})">×</button>
-    </div>`;
+    const fromSq = makeSqHTML(r.from,    editMode, editMode ? `cycleColor(${i},'from')`    : null);
+    const toSq   = makeSqHTML(r.toColor, editMode, editMode ? `cycleColor(${i},'toColor')` : null);
+    const arrow  = makeArrowHTML(r.not,  editMode, editMode ? `toggleNot(${i})`            : null);
+    const delBtn = editMode ? `<button class="del-btn" onclick="deleteRule(${i})">×</button>` : '';
+    return `<div class="rule-row">${fromSq}${arrow}${countHTML}${toSq}${delBtn}</div>`;
   }).join('');
 }
 
@@ -584,6 +621,200 @@ function doPrint() {
   hidePrintPreview();
   setTimeout(() => window.print(), 100);
 }
+
+/* ═══════ SOLVER ═══════ */
+
+function getNeighborList(idx) {
+  const r = Math.floor(idx/GRID), c = idx%GRID, n = [];
+  if (r > 0)       n.push(idx - GRID);
+  if (r < GRID-1)  n.push(idx + GRID);
+  if (c > 0)       n.push(idx - 1);
+  if (c < GRID-1)  n.push(idx + 1);
+  return n;
+}
+const NEIGHBOR_LIST = Array.from({length:TOTAL}, (_, i) => getNeighborList(i));
+
+// D4 symmetry group permutations
+function makePerm(fn) {
+  const p = new Array(TOTAL);
+  for (let i = 0; i < TOTAL; i++) {
+    const r = Math.floor(i/GRID), c = i%GRID;
+    const [nr, nc] = fn(r, c);
+    p[i] = nr*GRID + nc;
+  }
+  return p;
+}
+const G = GRID - 1;
+const SYMMETRIES = [
+  makePerm((r,c) => [r,      c     ]),
+  makePerm((r,c) => [c,      G-r   ]),
+  makePerm((r,c) => [G-r,    G-c   ]),
+  makePerm((r,c) => [G-c,    r     ]),
+  makePerm((r,c) => [G-r,    c     ]),
+  makePerm((r,c) => [r,      G-c   ]),
+  makePerm((r,c) => [c,      r     ]),
+  makePerm((r,c) => [G-c,    G-r   ]),
+];
+
+function canonical(grid) {
+  let best = null;
+  for (const perm of SYMMETRIES) {
+    const t = perm.map(i => grid[i]);
+    if (!best || t.join('') < best.join('')) best = t;
+  }
+  return best.join('');
+}
+
+function solveGrid(ruleset, countset) {
+  const colorKeys = Object.keys(countset).filter(k => countset[k] > 0);
+  const remaining = {...countset};
+  const grid = new Array(TOTAL).fill(null);
+  const seen = new Set();
+  const solutions = [];
+
+  // Preprocess rules
+  const notPairs = new Set();
+  const posReqs = {};
+  for (const r of ruleset) {
+    if (r.not) {
+      notPairs.add(r.from + '>' + r.toColor);
+    } else {
+      if (!posReqs[r.from]) posReqs[r.from] = [];
+      posReqs[r.from].push({ to: r.toColor, count: r.count || 1 });
+    }
+  }
+
+  function bt(pos) {
+    if (pos === TOTAL) {
+      // Final check: positive rules satisfied?
+      for (let i = 0; i < TOTAL; i++) {
+        const fc = grid[i];
+        const reqs = posReqs[fc] || [];
+        const nc = NEIGHBOR_LIST[i].map(n => grid[n]);
+        for (const { to, count } of reqs) {
+          if (nc.filter(c => c === to).length < count) return;
+        }
+      }
+      const canon = canonical(grid);
+      if (!seen.has(canon)) { seen.add(canon); solutions.push([...grid]); }
+      return;
+    }
+
+    const tried = new Set();
+    for (const color of colorKeys) {
+      if ((remaining[color] || 0) === 0 || tried.has(color)) continue;
+      tried.add(color);
+
+      const placedNbrs = NEIGHBOR_LIST[pos]
+        .filter(n => n < pos && grid[n] !== null)
+        .map(n => ({ n, c: grid[n] }));
+
+      // Prune: not-rules
+      let skip = false;
+      for (const { c: nc } of placedNbrs) {
+        if (notPairs.has(color+'>'+nc) || notPairs.has(nc+'>'+color)) { skip=true; break; }
+      }
+      if (skip) continue;
+
+      // Prune: positive rules for this color
+      const futureNbrs = NEIGHBOR_LIST[pos].filter(n => n > pos).length;
+      for (const { to, count } of (posReqs[color] || [])) {
+        const have = placedNbrs.filter(({c}) => c === to).length;
+        if (have + futureNbrs < count) { skip=true; break; }
+      }
+      if (skip) continue;
+
+      // Prune: would placing color doom a placed neighbor?
+      for (const { n, c: nc } of placedNbrs) {
+        for (const { to, count } of (posReqs[nc] || [])) {
+          let have = NEIGHBOR_LIST[n].filter(j => grid[j] === to).length;
+          if (color === to) have++;
+          if (have >= count) continue;
+          const future = NEIGHBOR_LIST[n].filter(j => j > pos).length;
+          if (have + future < count) { skip=true; break; }
+        }
+        if (skip) break;
+      }
+      if (skip) continue;
+
+      grid[pos] = color;
+      remaining[color]--;
+      bt(pos + 1);
+      grid[pos] = null;
+      remaining[color]++;
+    }
+  }
+
+  bt(0);
+  return solutions;
+}
+
+/* ═══════ SOLUTIONS UI ═══════ */
+function showSolutions() {
+  const overlay = document.getElementById('solutions-overlay');
+  const solGrid = document.getElementById('sol-grid');
+  const solTitle = document.getElementById('sol-title');
+  const solSubtitle = document.getElementById('sol-subtitle');
+  const solStatus = document.getElementById('sol-status');
+
+  overlay.style.display = 'block';
+  solGrid.innerHTML = '';
+  solStatus.style.display = 'block';
+  solStatus.textContent = 'Solving…';
+  solTitle.textContent = 'Solutions';
+  solSubtitle.textContent = '';
+
+  // Run solver asynchronously so UI updates first
+  setTimeout(() => {
+    const solutions = solveGrid(rules, counts);
+    solStatus.style.display = 'none';
+    const n = solutions.length;
+    solTitle.textContent = `${n} Solution${n !== 1 ? 's' : ''}`;
+    const ruleDesc = rules.map(r =>
+      r.not ? `${r.from} ↛ ${r.toColor}` : `${r.from} → ${r.toColor} (≥${r.count||1})`
+    ).join('  |  ');
+    solSubtitle.textContent = ruleDesc;
+
+    if (n === 0) {
+      solGrid.innerHTML = '<div style="color:#f4a0a0;font-size:15px">No solutions exist for this puzzle.</div>';
+      return;
+    }
+
+    const CELL = 28;
+    const SIZE = CELL * GRID;
+    solGrid.innerHTML = solutions.map((sol, i) => {
+      const cells = sol.map((color, idx) => {
+        const r = Math.floor(idx/GRID), c = idx%GRID;
+        return `<rect x="${c*CELL}" y="${r*CELL}" width="${CELL}" height="${CELL}"
+          fill="${PAL[color].bg}" stroke="#333" stroke-width="1"/>`;
+      }).join('');
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div style="font-size:11px;color:#666">${i+1}</div>
+        <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">${cells}</svg>
+      </div>`;
+    }).join('');
+  }, 30);
+}
+
+function hideSolutions() {
+  document.getElementById('solutions-overlay').style.display = 'none';
+}
+
+/* ═══════ EDIT MODE ═══════ */
+let editMode = false;
+
+function setEditMode(on) {
+  editMode = on;
+  document.body.classList.toggle('edit-mode', on);
+  document.getElementById('save-btn').style.display = on ? '' : 'none';
+  document.getElementById('solutions-btn').style.display = on ? '' : 'none';
+  renderCounts();
+  renderRules();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === '`') { e.preventDefault(); setEditMode(!editMode); }
+});
 
 /* ═══════ INIT ═══════ */
 buildTiles();
