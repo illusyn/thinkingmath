@@ -510,7 +510,7 @@ function savePuzzle() {
   URL.revokeObjectURL(url);
   document.getElementById('save-input').value = '';
   hideModal('save');
-  saveLastState();
+  rememberPuzzle();
 }
 
 function loadFile(event) {
@@ -530,7 +530,7 @@ function loadFile(event) {
         }
         checking = false;
         document.getElementById('check-btn').textContent = 'Check';
-        saveLastState(); renderAll();
+        saveLastState(); renderAll(); rememberPuzzle();
       }
     } catch(err) { alert('Invalid puzzle file.'); }
   };

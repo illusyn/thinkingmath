@@ -1,0 +1,102 @@
+{
+  "name": "R4B4Y8 - Puzzle 1",
+  "counts": {
+    "R": 4,
+    "B": 4,
+    "Y": 8
+  },
+  "rules": [
+    {
+      "from": "R",
+      "toColor": "Y",
+      "count": 2
+    },
+    {
+      "from": "Y",
+      "toColor": "Y",
+      "count": 1
+    },
+    {
+      "from": "B",
+      "toColor": "Y",
+      "count": 2
+    },
+    {
+      "from": "R",
+      "toColor": "R",
+      "not": true
+    },
+    {
+      "from": "B",
+      "toColor": "B",
+      "count": 1,
+      "not": true
+    }
+  ],
+  "tiles": [
+    {
+      "id": 0,
+      "color": "R"
+    },
+    {
+      "id": 14,
+      "color": "Y"
+    },
+    {
+      "id": 9,
+      "color": "Y"
+    },
+    {
+      "id": 2,
+      "color": "R"
+    },
+    {
+      "id": 10,
+      "color": "Y"
+    },
+    {
+      "id": 5,
+      "color": "B"
+    },
+    {
+      "id": 1,
+      "color": "R"
+    },
+    {
+      "id": 12,
+      "color": "Y"
+    },
+    {
+      "id": 11,
+      "color": "Y"
+    },
+    {
+      "id": 3,
+      "color": "R"
+    },
+    {
+      "id": 6,
+      "color": "B"
+    },
+    {
+      "id": 8,
+      "color": "Y"
+    },
+    {
+      "id": 4,
+      "color": "B"
+    },
+    {
+      "id": 13,
+      "color": "Y"
+    },
+    {
+      "id": 15,
+      "color": "Y"
+    },
+    {
+      "id": 7,
+      "color": "B"
+    }
+  ]
+}
