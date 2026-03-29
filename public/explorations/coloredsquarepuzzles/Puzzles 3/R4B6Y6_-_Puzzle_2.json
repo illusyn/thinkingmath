@@ -1,0 +1,20 @@
+{
+  "name": "R4B6Y6 - Puzzle 2b",
+  "counts": {
+    "R": 4,
+    "B": 6,
+    "Y": 6
+  },
+  "rules": [
+    {
+      "from": "R",
+      "toColor": "Y",
+      "count": 2
+    },
+    {
+      "from": "B",
+      "toColor": "B",
+      "count": 1
+    }
+  ]
+}
