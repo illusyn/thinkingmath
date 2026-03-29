@@ -18,7 +18,10 @@ body {
   font-family: 'DM Sans', 'Avenir', 'Segoe UI', sans-serif;
   user-select: none; -webkit-user-select: none;
 }
-#app { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 440px; }
+#app { display: flex; flex-direction: row; align-items: flex-start; justify-content: center; width: 100%; max-width: 960px; gap: 20px; }
+#app-left { display: flex; flex-direction: column; width: 220px; flex-shrink: 0; }
+#app-middle { display: flex; flex-direction: column; width: 200px; flex-shrink: 0; }
+#app-right { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 260px; }
 h1.title { color: #eee; font-size: 28px; font-weight: 800; letter-spacing: 8px; margin: 0 0 16px; }
 
 /* ===== PANELS ===== */
@@ -63,7 +66,7 @@ h1.title { color: #eee; font-size: 28px; font-weight: 800; letter-spacing: 8px; 
 .solved-banner.show { display: flex; }
 
 /* ===== GRID ===== */
-.grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; width: 100%; aspect-ratio: 1/1; background: transparent; border-radius: 18px; padding: 10px; position: relative; border: none; box-shadow: none; }
+.grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 9px; width: 100%; aspect-ratio: 1/1; background: transparent; border-radius: 18px; padding: 10px; position: relative; border: none; box-shadow: none; }
 .tile { border-radius: 14px; display: flex; align-items: center; justify-content: center; position: relative; aspect-ratio: 1/1; cursor: grab; touch-action: none; border: 3px solid transparent; transition: transform 0.2s cubic-bezier(.4,0,.2,1), box-shadow 0.2s, opacity 0.15s; overflow: hidden; }
 .tile .shine { position: absolute; top: 0; left: 0; right: 0; height: 45%; background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 100%); border-radius: 11px 11px 0 0; pointer-events: none; }
 .tile .mark { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: rgba(255,255,255,0.85); font-size: 24px; font-weight: 900; z-index: 2; pointer-events: none; text-shadow: 0 1px 4px rgba(0,0,0,0.3); display: none; }
@@ -143,106 +146,77 @@ body.edit-mode #edit-badge { display: block; }
 
 <div id="edit-badge">EDIT MODE</div>
 <div id="app">
-  <h1 class="title">COLOR TILES <span style="font-size:16px;font-weight:700;opacity:1;letter-spacing:1px;color:#000">V14</span></h1>
 
-  <!-- Notation -->
-  <div class="panel">
-    <div class="panel-header">NOTATION</div>
-    <div class="panel-body">
-      <div class="explain-row"><span class="explain-text"><b>Adjacent</b> squares share a side.</span></div>
-      <div class="divider"></div>
-      <div class="explain-row">
-        <span class="mini-sq" style="background:#E63946"></span>
-        <span class="arrow">⟶</span>
-        <span class="mini-sq" style="background:#457B9D"></span>
-        <span class="explain-text">means "Each red square is adjacent to a blue square"</span>
-      </div>
-      <div class="explain-row" style="margin-top:8px">
-        <span class="mini-sq" style="background:#F4D35E"></span>
-        <span class="arrow">⟶</span>
-        <span class="rule-count">2</span>
-        <span class="mini-sq" style="background:#457B9D"></span>
-        <span class="explain-text">means "Each yellow square is adjacent to 2 blue squares"</span>
-      </div>
-      <div class="explain-row" style="margin-top:8px">
-        <span class="mini-sq" style="background:#E63946"></span>
-        <span class="arrow">⟶<span class="slash"></span></span>
-        <span class="mini-sq" style="background:#457B9D"></span>
-        <span class="explain-text">means "No red square is adjacent to a blue square"</span>
+  <!-- LEFT: Notation -->
+  <div id="app-left">
+    <h1 class="title" style="text-align:center">COLOR TILES <span style="font-size:16px;font-weight:700;opacity:1;letter-spacing:1px;color:#000">V15</span></h1>
+    <div class="panel">
+      <div class="panel-header">NOTATION</div>
+      <div class="panel-body">
+        <div class="explain-row"><span class="explain-text"><b>Adjacent</b> squares share a side.</span></div>
+        <div class="divider"></div>
+        <div class="explain-row">
+          <span class="mini-sq" style="background:#E63946"></span>
+          <span class="arrow">⟶</span>
+          <span class="mini-sq" style="background:#457B9D"></span>
+          <span class="explain-text">means "Each red square is adjacent to a blue square"</span>
+        </div>
+        <div class="explain-row" style="margin-top:8px">
+          <span class="mini-sq" style="background:#F4D35E"></span>
+          <span class="arrow">⟶</span>
+          <span class="rule-count">2</span>
+          <span class="mini-sq" style="background:#457B9D"></span>
+          <span class="explain-text">means "Each yellow square is adjacent to 2 blue squares"</span>
+        </div>
+        <div class="explain-row" style="margin-top:8px">
+          <span class="mini-sq" style="background:#E63946"></span>
+          <span class="arrow">⟶<span class="slash"></span></span>
+          <span class="mini-sq" style="background:#457B9D"></span>
+          <span class="explain-text">means "No red square is adjacent to a blue square"</span>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Puzzle Definition -->
-  <div class="panel">
-    <div class="panel-header">PUZZLE</div>
-    <div class="panel-body">
-      <div class="section-label">SQUARES BY COLOR</div>
-      <div id="counts-row" class="counts-row"></div>
-      <div id="total-row" class="total-row"></div>
-      <div class="divider"></div>
-      <div class="section-label">RULES</div>
-      <div id="rules-col" class="rules-col"></div>
-      <button class="add-rule-btn edit-only" onclick="addRule()">+ Add Rule</button>
-    </div>
-  </div>
-
-  <!-- Color Settings (edit mode only) -->
-  <div class="panel edit-only" id="color-panel" style="display:none">
-    <div class="panel-header">COLORS</div>
-    <div class="panel-body" style="gap:10px">
-      <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:6px 10px;align-items:center;font-size:13px;">
-        <div></div>
-        <div style="font-weight:700;color:#999;font-size:11px;letter-spacing:1px">SCREEN</div>
-        <div style="font-weight:700;color:#999;font-size:11px;letter-spacing:1px">PRINT</div>
-
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,0.2)" id="col-dot-R"></span>
-          <span style="font-weight:600">Red</span>
-        </div>
-        <input type="color" id="screen-col-R" oninput="SCREEN_COL['R']=this.value;updatePAL();document.getElementById('col-dot-R').style.background=this.value" style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
-        <input type="color" id="print-col-R" oninput="PRINT_COL['R']=this.value;saveColors()" style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
-
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,0.2)" id="col-dot-B"></span>
-          <span style="font-weight:600">Blue</span>
-        </div>
-        <input type="color" id="screen-col-B" oninput="SCREEN_COL['B']=this.value;updatePAL();document.getElementById('col-dot-B').style.background=this.value" style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
-        <input type="color" id="print-col-B" oninput="PRINT_COL['B']=this.value;saveColors()" style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
-
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,0.2)" id="col-dot-Y"></span>
-          <span style="font-weight:600">Yellow</span>
-        </div>
-        <input type="color" id="screen-col-Y" oninput="SCREEN_COL['Y']=this.value;updatePAL();document.getElementById('col-dot-Y').style.background=this.value" style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
-        <input type="color" id="print-col-Y" oninput="PRINT_COL['Y']=this.value;saveColors()" style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
+  <!-- MIDDLE: Puzzle Definition -->
+  <div id="app-middle">
+    <div class="panel" style="margin-top:60px">
+      <div class="panel-header">PUZZLE</div>
+      <div class="panel-body">
+        <div class="section-label">SQUARES BY COLOR</div>
+        <div id="counts-row" class="counts-row"></div>
+        <div id="total-row" class="total-row"></div>
+        <div class="divider"></div>
+        <div class="section-label">RULES</div>
+        <div id="rules-col" class="rules-col"></div>
+        <button class="add-rule-btn edit-only" onclick="addRule()">+ Add Rule</button>
       </div>
-      <button onclick="resetColors()" style="align-self:flex-start;padding:4px 12px;border-radius:6px;border:1px dashed #ccc;background:transparent;color:#999;font-size:12px;cursor:pointer;margin-top:4px">Reset to defaults</button>
     </div>
   </div>
 
-  <!-- Solved Banner -->
-  <div id="solved-banner" class="solved-banner">
-    <span style="font-size:14px">✦</span> SOLVED <span style="font-size:14px">✦</span>
+  <!-- RIGHT: Grid + Controls -->
+  <div id="app-right">
+    <div style="height:60px"></div>
+    <!-- Solved Banner -->
+    <div id="solved-banner" class="solved-banner">
+      <span style="font-size:14px">✦</span> SOLVED <span style="font-size:14px">✦</span>
+    </div>
+    <!-- Grid -->
+    <div id="grid" class="grid"></div>
+    <!-- Ghost for dragging -->
+    <div id="ghost" class="ghost"><div class="shine"></div></div>
+    <!-- Controls -->
+    <div class="btn-row">
+      <button class="btn btn-check" id="check-btn" onclick="toggleCheck()">Check</button>
+      <button class="btn" onclick="showModal('save')" style="display:none" id="save-btn">Save</button>
+      <button class="btn" onclick="document.getElementById('load-file-input').click()" style="display:none" id="load-btn">Load</button>
+      <input type="file" id="load-file-input" accept=".json" style="display:none" onchange="loadFile(event)">
+      <button class="btn btn-print" onclick="showPrintPreview()" style="display:none" id="print-btn">Print</button>
+      <button class="btn" onclick="showSolutions()" style="display:none" id="solutions-btn">Solutions</button>
+      <button class="btn btn-print" onclick="printSolutions()" style="display:none" id="print-solutions-btn">Print Solutions</button>
+    </div>
   </div>
 
-  <!-- Grid -->
-  <div id="grid" class="grid"></div>
-
-  <!-- Ghost for dragging -->
-  <div id="ghost" class="ghost"><div class="shine"></div></div>
-
-  <!-- Controls -->
-  <div class="btn-row">
-    <button class="btn" onclick="shuffle()">Shuffle</button>
-    <button class="btn btn-check" id="check-btn" onclick="toggleCheck()">Check</button>
-    <button class="btn" onclick="showModal('save')" style="display:none" id="save-btn">Save</button>
-    <button class="btn" onclick="document.getElementById('load-file-input').click()">Load</button>
-    <input type="file" id="load-file-input" accept=".json" style="display:none" onchange="loadFile(event)">
-    <button class="btn btn-print" onclick="showPrintPreview()">Print</button>
-    <button class="btn" onclick="showSolutions()" style="display:none" id="solutions-btn">Solutions</button>
-    <button class="btn btn-print" onclick="printSolutions()" style="display:none" id="print-solutions-btn">Print Solutions</button>
-  </div>
 </div>
 
 <!-- Save Modal -->
@@ -962,9 +936,10 @@ function setEditMode(on) {
   editMode = on;
   document.body.classList.toggle('edit-mode', on);
   document.getElementById('save-btn').style.display = on ? '' : 'none';
+  document.getElementById('load-btn').style.display = on ? '' : 'none';
+  document.getElementById('print-btn').style.display = on ? '' : 'none';
   document.getElementById('solutions-btn').style.display = on ? '' : 'none';
   document.getElementById('print-solutions-btn').style.display = on ? '' : 'none';
-  document.getElementById('color-panel').style.display = on ? '' : 'none';
   renderCounts();
   renderRules();
 }
