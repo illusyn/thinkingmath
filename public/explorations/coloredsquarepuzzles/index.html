@@ -142,7 +142,7 @@ body.edit-mode #edit-badge { display: block; }
 
 <div id="edit-badge">EDIT MODE</div>
 <div id="app">
-  <h1 class="title">COLOR TILES <span style="font-size:11px;font-weight:400;opacity:0.5;letter-spacing:1px">V7</span></h1>
+  <h1 class="title">COLOR TILES <span style="font-size:11px;font-weight:400;opacity:0.5;letter-spacing:1px">V8</span></h1>
 
   <!-- Notation -->
   <div class="panel">
@@ -183,6 +183,31 @@ body.edit-mode #edit-badge { display: block; }
       <div class="section-label">RULES</div>
       <div id="rules-col" class="rules-col"></div>
       <button class="add-rule-btn edit-only" onclick="addRule()">+ Add Rule</button>
+    </div>
+  </div>
+
+  <!-- Color Settings (edit mode only) -->
+  <div class="panel edit-only" id="color-panel" style="display:none">
+    <div class="panel-header">COLORS</div>
+    <div class="panel-body" style="gap:10px">
+      <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:6px 10px;align-items:center;font-size:13px;">
+        <div></div>
+        <div style="font-weight:700;color:#999;font-size:11px;letter-spacing:1px">SCREEN</div>
+        <div style="font-weight:700;color:#999;font-size:11px;letter-spacing:1px">PRINT</div>
+        ${COLORS.map(c => `
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:12px;height:12px;border-radius:3px;background:${SCREEN_COL[c]};display:inline-block;border:1px solid rgba(0,0,0,0.2)" id="col-dot-${c}"></span>
+          <span style="font-weight:600">${CNAME[c]}</span>
+        </div>
+        <input type="color" id="screen-col-${c}" value="${SCREEN_COL[c]}"
+          oninput="SCREEN_COL['${c}']=this.value; updatePAL(); document.getElementById('col-dot-${c}').style.background=this.value"
+          style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
+        <input type="color" id="print-col-${c}" value="${PRINT_COL[c]}"
+          oninput="PRINT_COL['${c}']=this.value; saveColors()"
+          style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
+        `).join('')}
+      </div>
+      <button onclick="resetColors()" style="align-self:flex-start;padding:4px 12px;border-radius:6px;border:1px dashed #ccc;background:transparent;color:#999;font-size:12px;cursor:pointer;margin-top:4px">Reset to defaults</button>
     </div>
   </div>
 
@@ -272,12 +297,44 @@ body.edit-mode #edit-badge { display: block; }
 /* ═══════ DATA ═══════ */
 const GRID = 4, TOTAL = 16;
 const COLORS = ['R','B','Y'];
-const PAL = {
-  R: { bg:'#E63946', hi:'#FF6B7A', shadow:'rgba(230,57,70,0.45)' },
-  B: { bg:'#457B9D', hi:'#6BA3C7', shadow:'rgba(69,123,157,0.45)' },
-  Y: { bg:'#F4D35E', hi:'#FBE68A', shadow:'rgba(244,211,94,0.45)' },
-};
 const CNAME = { R:'Red', B:'Blue', Y:'Yellow' };
+
+const COLOR_KEY = 'colorTileColors';
+const DEFAULT_SCREEN = { R:'#E63946', B:'#457B9D', Y:'#F4D35E' };
+const DEFAULT_PRINT  = { R:'#FF0000', B:'#4D4DFF', Y:'#FFFF00' };
+
+function loadColors() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(COLOR_KEY));
+    if (saved && saved.screen && saved.print) return saved;
+  } catch(e) {}
+  return { screen: {...DEFAULT_SCREEN}, print: {...DEFAULT_PRINT} };
+}
+
+function saveColors() {
+  try { localStorage.setItem(COLOR_KEY, JSON.stringify({ screen: SCREEN_COL, print: PRINT_COL })); } catch(e) {}
+}
+
+const savedColors = loadColors();
+const SCREEN_COL = savedColors.screen;
+const PRINT_COL  = savedColors.print;
+
+// PAL uses screen colors; hi/shadow derived from bg
+function makePAL() {
+  const p = {};
+  for (const c of COLORS) {
+    p[c] = { bg: SCREEN_COL[c], hi: SCREEN_COL[c], shadow: 'rgba(0,0,0,0.3)' };
+  }
+  return p;
+}
+let PAL = makePAL();
+
+function updatePAL() {
+  for (const c of COLORS) PAL[c].bg = PAL[c].hi = SCREEN_COL[c];
+  saveColors();
+  renderAll();
+  renderGrid();
+}
 
 const DEFAULT_COUNTS = { R:4, B:8, Y:4 };
 const DEFAULT_RULES = [
@@ -593,7 +650,7 @@ function buildPrintHTML() {
   }).join('');
 
   const gridHTML = tiles.map(t =>
-    `<div class="pp-tile" style="background:${PAL[t.color].bg}"></div>`
+    `<div class="pp-tile" style="background:${PRINT_COL[t.color]}"></div>`
   ).join('');
 
   return `
@@ -830,7 +887,7 @@ function printSolutions() {
     const cells = sol.map((color, idx) => {
       const r = Math.floor(idx / GRID), c = idx % GRID;
       return `<rect x="${c*CELL}" y="${r*CELL}" width="${CELL}" height="${CELL}"
-        fill="${PAL[color].bg}" stroke="#ccc" stroke-width="1"/>`;
+        fill="${PRINT_COL[color]}" stroke="#ccc" stroke-width="1"/>`;
     }).join('');
     return `<div class="ps-card">
       <div class="ps-num">${i + 1}</div>
@@ -891,8 +948,20 @@ function setEditMode(on) {
   document.getElementById('save-btn').style.display = on ? '' : 'none';
   document.getElementById('solutions-btn').style.display = on ? '' : 'none';
   document.getElementById('print-solutions-btn').style.display = on ? '' : 'none';
+  document.getElementById('color-panel').style.display = on ? '' : 'none';
   renderCounts();
   renderRules();
+}
+
+function resetColors() {
+  for (const c of COLORS) {
+    SCREEN_COL[c] = DEFAULT_SCREEN[c];
+    PRINT_COL[c]  = DEFAULT_PRINT[c];
+    document.getElementById(`screen-col-${c}`).value = DEFAULT_SCREEN[c];
+    document.getElementById(`print-col-${c}`).value  = DEFAULT_PRINT[c];
+    document.getElementById(`col-dot-${c}`).style.background = DEFAULT_SCREEN[c];
+  }
+  updatePAL();
 }
 
 document.addEventListener('keydown', e => {
