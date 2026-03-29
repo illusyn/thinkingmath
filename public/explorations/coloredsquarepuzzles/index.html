@@ -63,7 +63,7 @@ h1.title { color: #eee; font-size: 28px; font-weight: 800; letter-spacing: 8px; 
 .solved-banner.show { display: flex; }
 
 /* ===== GRID ===== */
-.grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; width: 100%; aspect-ratio: 1/1; background: #fff; border-radius: 18px; padding: 10px; position: relative; border: 1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; width: 100%; aspect-ratio: 1/1; background: transparent; border-radius: 18px; padding: 10px; position: relative; border: none; box-shadow: none; }
 .tile { border-radius: 14px; display: flex; align-items: center; justify-content: center; position: relative; aspect-ratio: 1/1; cursor: grab; touch-action: none; border: 3px solid transparent; transition: transform 0.2s cubic-bezier(.4,0,.2,1), box-shadow 0.2s, opacity 0.15s; overflow: hidden; }
 .tile .shine { position: absolute; top: 0; left: 0; right: 0; height: 45%; background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 100%); border-radius: 11px 11px 0 0; pointer-events: none; }
 .tile .mark { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: rgba(255,255,255,0.85); font-size: 24px; font-weight: 900; z-index: 2; pointer-events: none; text-shadow: 0 1px 4px rgba(0,0,0,0.3); display: none; }
@@ -143,7 +143,7 @@ body.edit-mode #edit-badge { display: block; }
 
 <div id="edit-badge">EDIT MODE</div>
 <div id="app">
-  <h1 class="title">COLOR TILES <span style="font-size:16px;font-weight:700;opacity:1;letter-spacing:1px;color:#000">V13</span></h1>
+  <h1 class="title">COLOR TILES <span style="font-size:16px;font-weight:700;opacity:1;letter-spacing:1px;color:#000">V14</span></h1>
 
   <!-- Notation -->
   <div class="panel">
