@@ -142,7 +142,7 @@ body.edit-mode #edit-badge { display: block; }
 
 <div id="edit-badge">EDIT MODE</div>
 <div id="app">
-  <h1 class="title">COLOR TILES <span style="font-size:11px;font-weight:400;opacity:0.5;letter-spacing:1px">V6</span></h1>
+  <h1 class="title">COLOR TILES <span style="font-size:11px;font-weight:400;opacity:0.5;letter-spacing:1px">V7</span></h1>
 
   <!-- Notation -->
   <div class="panel">
@@ -206,6 +206,7 @@ body.edit-mode #edit-badge { display: block; }
     <input type="file" id="load-file-input" accept=".json" style="display:none" onchange="loadFile(event)">
     <button class="btn btn-print" onclick="showPrintPreview()">Print</button>
     <button class="btn" onclick="showSolutions()" style="display:none" id="solutions-btn">Solutions</button>
+    <button class="btn btn-print" onclick="printSolutions()" style="display:none" id="print-solutions-btn">Print Solutions</button>
   </div>
 </div>
 
@@ -800,6 +801,87 @@ function hideSolutions() {
   document.getElementById('solutions-overlay').style.display = 'none';
 }
 
+function printSolutions() {
+  const solutions = solveGrid(rules, counts);
+  const n = solutions.length;
+
+  // Build header — same format as regular print
+  const countsHTML = Object.entries(counts).map(([c, v]) =>
+    `<span class="ps-chip">
+      <span class="ps-dot" style="background:${PAL[c].bg}"></span>
+      <b>${CNAME[c]}</b> ×${v}
+    </span>`
+  ).join('');
+
+  const rulesHTML = rules.map(r => {
+    const from  = `<span class="ps-sq" style="background:${PAL[r.from].bg}"></span>`;
+    const to    = `<span class="ps-sq" style="background:${PAL[r.toColor].bg}"></span>`;
+    const arrow = r.not
+      ? `<span class="ps-arrow">⟶<span class="slash"></span></span>`
+      : `<span class="ps-arrow">⟶</span>`;
+    const cnt = (!r.not && r.count > 1) ? `<span class="ps-cnt">${r.count}</span>` : '';
+    return `<div class="ps-rule">${from}${arrow}${cnt}${to}</div>`;
+  }).join('');
+
+  // Build solution grid
+  const CELL = 36;
+  const SIZE = CELL * GRID;
+  const solsHTML = solutions.map((sol, i) => {
+    const cells = sol.map((color, idx) => {
+      const r = Math.floor(idx / GRID), c = idx % GRID;
+      return `<rect x="${c*CELL}" y="${r*CELL}" width="${CELL}" height="${CELL}"
+        fill="${PAL[color].bg}" stroke="#ccc" stroke-width="1"/>`;
+    }).join('');
+    return `<div class="ps-card">
+      <div class="ps-num">${i + 1}</div>
+      <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">${cells}</svg>
+    </div>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Color Tiles — Solutions</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { font-family: 'DM Sans','Segoe UI',sans-serif; padding: 28px; background: white; color: #222; }
+  h2 { font-size: 20px; letter-spacing: 5px; text-align: center; margin-bottom: 20px; }
+  .ps-label { font-size: 11px; font-weight: 700; letter-spacing: 3px; color: #999; margin: 14px 0 6px; }
+  .ps-counts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .ps-chip { display: inline-flex; align-items: center; gap: 6px;
+             background: #f5f5f5; border-radius: 6px; padding: 4px 10px; font-size: 14px; color: #333; }
+  .ps-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+  .ps-rules { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+  .ps-rule { display: flex; align-items: center; gap: 5px; }
+  .ps-sq { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.15); flex-shrink: 0; }
+  .ps-arrow { font-size: 16px; color: #444; position: relative; display: inline-flex; align-items: center; }
+  .slash { position: absolute; left: 50%; top: 50%;
+           transform: translate(-50%,-50%) rotate(-30deg);
+           width: 2px; height: 18px; background: #e63946; display: block; }
+  .ps-cnt { font-size: 12px; font-weight: 700; color: #444;
+            background: #eee; border-radius: 4px; padding: 1px 5px; }
+  .ps-total { font-size: 13px; color: #999; margin: 14px 0 8px; }
+  .ps-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+  .ps-card { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .ps-num { font-size: 10px; color: #bbb; font-weight: 600; }
+  @media print { body { padding: 16px; } }
+</style>
+</head><body>
+<h2>COLOR TILES</h2>
+<div class="ps-label">SQUARES BY COLOR</div>
+<div class="ps-counts">${countsHTML}</div>
+<div class="ps-label">RULES</div>
+<div class="ps-rules">${rulesHTML}</div>
+<div class="ps-total">${n} unique solution${n !== 1 ? 's' : ''} (rotations &amp; reflections count as one)</div>
+<div class="ps-label">SOLUTIONS</div>
+<div class="ps-grid">${solsHTML}</div>
+</body></html>`;
+
+  const win = window.open('', '_blank', 'width=900,height=700');
+  win.document.write(html);
+  win.document.close();
+  win.onload = () => { win.focus(); win.print(); };
+}
+
 /* ═══════ EDIT MODE ═══════ */
 let editMode = false;
 
@@ -808,6 +890,7 @@ function setEditMode(on) {
   document.body.classList.toggle('edit-mode', on);
   document.getElementById('save-btn').style.display = on ? '' : 'none';
   document.getElementById('solutions-btn').style.display = on ? '' : 'none';
+  document.getElementById('print-solutions-btn').style.display = on ? '' : 'none';
   renderCounts();
   renderRules();
 }
