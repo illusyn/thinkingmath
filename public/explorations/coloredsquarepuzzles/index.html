@@ -142,7 +142,7 @@ body.edit-mode #edit-badge { display: block; }
 
 <div id="edit-badge">EDIT MODE</div>
 <div id="app">
-  <h1 class="title">COLOR TILES <span style="font-size:11px;font-weight:400;opacity:0.5;letter-spacing:1px">V8</span></h1>
+  <h1 class="title">COLOR TILES <span style="font-size:11px;font-weight:400;opacity:0.5;letter-spacing:1px">V9</span></h1>
 
   <!-- Notation -->
   <div class="panel">
@@ -194,18 +194,27 @@ body.edit-mode #edit-badge { display: block; }
         <div></div>
         <div style="font-weight:700;color:#999;font-size:11px;letter-spacing:1px">SCREEN</div>
         <div style="font-weight:700;color:#999;font-size:11px;letter-spacing:1px">PRINT</div>
-        ${COLORS.map(c => `
+
         <div style="display:flex;align-items:center;gap:6px">
-          <span style="width:12px;height:12px;border-radius:3px;background:${SCREEN_COL[c]};display:inline-block;border:1px solid rgba(0,0,0,0.2)" id="col-dot-${c}"></span>
-          <span style="font-weight:600">${CNAME[c]}</span>
+          <span style="width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,0.2)" id="col-dot-R"></span>
+          <span style="font-weight:600">Red</span>
         </div>
-        <input type="color" id="screen-col-${c}" value="${SCREEN_COL[c]}"
-          oninput="SCREEN_COL['${c}']=this.value; updatePAL(); document.getElementById('col-dot-${c}').style.background=this.value"
-          style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
-        <input type="color" id="print-col-${c}" value="${PRINT_COL[c]}"
-          oninput="PRINT_COL['${c}']=this.value; saveColors()"
-          style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
-        `).join('')}
+        <input type="color" id="screen-col-R" oninput="SCREEN_COL['R']=this.value;updatePAL();document.getElementById('col-dot-R').style.background=this.value" style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
+        <input type="color" id="print-col-R" oninput="PRINT_COL['R']=this.value;saveColors()" style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
+
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,0.2)" id="col-dot-B"></span>
+          <span style="font-weight:600">Blue</span>
+        </div>
+        <input type="color" id="screen-col-B" oninput="SCREEN_COL['B']=this.value;updatePAL();document.getElementById('col-dot-B').style.background=this.value" style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
+        <input type="color" id="print-col-B" oninput="PRINT_COL['B']=this.value;saveColors()" style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
+
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,0.2)" id="col-dot-Y"></span>
+          <span style="font-weight:600">Yellow</span>
+        </div>
+        <input type="color" id="screen-col-Y" oninput="SCREEN_COL['Y']=this.value;updatePAL();document.getElementById('col-dot-Y').style.background=this.value" style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
+        <input type="color" id="print-col-Y" oninput="PRINT_COL['Y']=this.value;saveColors()" style="width:44px;height:28px;border:1px solid #ddd;border-radius:5px;cursor:pointer;padding:1px">
       </div>
       <button onclick="resetColors()" style="align-self:flex-start;padding:4px 12px;border-radius:6px;border:1px dashed #ccc;background:transparent;color:#999;font-size:12px;cursor:pointer;margin-top:4px">Reset to defaults</button>
     </div>
@@ -969,6 +978,15 @@ document.addEventListener('keydown', e => {
 });
 
 /* ═══════ INIT ═══════ */
+// Initialize color pickers with saved values
+for (const c of COLORS) {
+  const sd = document.getElementById(`screen-col-${c}`);
+  const pd = document.getElementById(`print-col-${c}`);
+  const dot = document.getElementById(`col-dot-${c}`);
+  if (sd) sd.value = SCREEN_COL[c];
+  if (pd) pd.value = PRINT_COL[c];
+  if (dot) dot.style.background = SCREEN_COL[c];
+}
 buildTiles();
 renderAll();
 </script>
