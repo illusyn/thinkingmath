@@ -56,27 +56,21 @@
 
         .site-title {
             font-family: 'DM Serif Display', serif;
-            font-size: clamp(2.8rem, 6vw, 4.5rem);
-            letter-spacing: -0.02em;
-            line-height: 1.1;
-            margin-bottom: 12px;
+            font-size: clamp(1.8rem, 3.6vw, 2.8rem);
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+            margin-bottom: 0;
+            max-width: 760px;
+            margin-left: auto;
+            margin-right: auto;
             position: relative;
         }
 
-        .site-title .thinking {
+        .site-title .lead {
             color: var(--ink);
         }
-        .site-title .math {
+        .site-title .accent {
             color: var(--red);
-        }
-
-        .tagline {
-            font-size: 1.15rem;
-            font-weight: 300;
-            color: var(--muted);
-            letter-spacing: 0.03em;
-            max-width: 500px;
-            margin: 0 auto;
         }
 
         /* --- Decorative shapes --- */
@@ -255,9 +249,8 @@
 <header>
     <img src="/logo.svg" alt="Thinking Math" class="site-logo">
     <h1 class="site-title">
-        <span class="thinking">Thinking</span> <span class="math">Math</span>
+        <span class="lead">Visual puzzles and activities that build</span> <span class="accent">mathematical thinking</span>
     </h1>
-    <p class="tagline">Visual puzzles and activities that build mathematical thinking</p>
 
     <div class="shapes-row">
         <svg viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="16" fill="none" stroke="var(--red)" stroke-width="2"/></svg>
