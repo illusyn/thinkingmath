@@ -120,11 +120,12 @@
     pointer-events: none;
   }
 
+  /* Red glow inset 7px from the cell edge so the cream border stays visible */
   .cell.threatened::after {
     content: '';
     position: absolute;
-    inset: 0;
-    border-radius: 8px;
+    inset: 7px;
+    border-radius: 5px;
     pointer-events: none;
     z-index: 2;
     box-shadow: inset 0 0 8px 4px rgba(192, 57, 43, 1);
@@ -298,7 +299,6 @@
       const nbrCreatures = nbrs.map(i => cells[i]);
 
       // Rule: a rabbit is threatened iff it has any fox neighbor.
-      // Farmers do not protect.
       if (creature === RABBIT) {
         if (nbrCreatures.includes(FOX)) {
           cellEl.classList.add('threatened');
