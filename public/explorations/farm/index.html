@@ -120,7 +120,6 @@
     pointer-events: none;
   }
 
-  /* Gradient extent halved: blur 16->8, spread 8->4 */
   .cell.threatened::after {
     content: '';
     position: absolute;
@@ -220,24 +219,20 @@
     return `<img src="${IMAGES[c]}" alt="${c}" draggable="false">`;
   }
 
-  // Each starting config: 3 foxes, 3 rabbits, 3 farmers, with 1–3 threatened rabbits
+  // Each starting config: 3 foxes, 3 rabbits, 3 farmers
   const startingConfigs = [
-    // 1 threatened
     [RABBIT, FOX,    RABBIT,
      FARMER, FARMER, FOX,
      RABBIT, FARMER, FOX],
 
-    // 2 threatened (variant A)
     [RABBIT, FOX,    RABBIT,
      FOX,    FARMER, FOX,
      FARMER, FARMER, RABBIT],
 
-    // 2 threatened (variant B)
     [RABBIT, FOX,    FARMER,
      FOX,    FARMER, RABBIT,
      FARMER, FOX,    RABBIT],
 
-    // 3 threatened
     [FARMER, FARMER, FARMER,
      FOX,    FOX,    FOX,
      RABBIT, RABBIT, RABBIT],
@@ -302,10 +297,10 @@
       const nbrs = neighborsOf(idx);
       const nbrCreatures = nbrs.map(i => cells[i]);
 
+      // Rule: a rabbit is threatened iff it has any fox neighbor.
+      // Farmers do not protect.
       if (creature === RABBIT) {
-        const hasFox = nbrCreatures.includes(FOX);
-        const hasFarmer = nbrCreatures.includes(FARMER);
-        if (hasFox && !hasFarmer) {
+        if (nbrCreatures.includes(FOX)) {
           cellEl.classList.add('threatened');
           allCalm = false;
         }
