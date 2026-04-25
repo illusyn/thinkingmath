@@ -120,9 +120,7 @@
     pointer-events: none;
   }
 
-  /* A single inset shadow with no spread — just blur. Maximally
-     opaque at the edge, fading smoothly inward. No separate
-     border line. */
+  /* Gradient extent halved: blur 16->8, spread 8->4 */
   .cell.threatened::after {
     content: '';
     position: absolute;
@@ -130,7 +128,7 @@
     border-radius: 8px;
     pointer-events: none;
     z-index: 2;
-    box-shadow: inset 0 0 16px 8px rgba(192, 57, 43, 1);
+    box-shadow: inset 0 0 8px 4px rgba(192, 57, 43, 1);
   }
 
   .cell.calm-glow {
