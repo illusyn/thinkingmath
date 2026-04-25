@@ -104,7 +104,6 @@
     align-items: center;
     justify-content: center;
     pointer-events: none;
-    transition: transform 0.4s ease, filter 0.4s ease;
   }
 
   .creature img {
@@ -119,10 +118,6 @@
     pointer-events: none;
   }
 
-  .creature img[alt="farmer"] {
-    transform: scale(1.6);
-  }
-
   .cell.shivering {
     background: #fbe1dc;
     animation: shiver 0.35s ease-in-out infinite;
@@ -130,11 +125,6 @@
 
   .cell.shivering:hover {
     background: #fbe1dc;
-  }
-
-  .cell.sulking .creature {
-    transform: rotate(-12deg) translateY(3px);
-    filter: grayscale(0.35) brightness(0.92);
   }
 
   .cell.calm-glow {
@@ -166,10 +156,6 @@
     height: 100%;
     object-fit: contain;
     pointer-events: none;
-  }
-
-  .floating img[alt="farmer"] {
-    transform: scale(1.6);
   }
 
   .below {
@@ -227,9 +213,9 @@
   const FARMER = 'farmer';
 
   const IMAGES = {
-    [FOX]: 'fox.jpg',
-    [RABBIT]: 'rabbit.jpg',
-    [FARMER]: 'farmer.jpg',
+    [FOX]: 'fox.jpg?v=3',
+    [RABBIT]: 'rabbit.jpg?v=3',
+    [FARMER]: 'farmer.jpg?v=3',
   };
 
   function creatureHTML(c) {
@@ -313,7 +299,7 @@
     let allCalm = true;
 
     cellEls.forEach((cellEl, idx) => {
-      cellEl.classList.remove('shivering', 'sulking', 'calm-glow');
+      cellEl.classList.remove('shivering', 'calm-glow');
       const creature = cells[idx];
       const nbrs = neighborsOf(idx);
       const nbrCreatures = nbrs.map(i => cells[i]);
@@ -324,13 +310,6 @@
         if (hasFox && !hasFarmer) {
           cellEl.classList.add('shivering');
           allCalm = false;
-        }
-      }
-
-      if (creature === FOX) {
-        const hasFarmer = nbrCreatures.includes(FARMER);
-        if (hasFarmer) {
-          cellEl.classList.add('sulking');
         }
       }
     });
