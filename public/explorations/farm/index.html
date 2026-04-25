@@ -73,13 +73,11 @@
     align-items: center;
     justify-content: center;
     cursor: grab;
-    transition: background 0.4s, box-shadow 0.4s, outline 0.3s;
+    transition: background 0.4s, box-shadow 0.4s;
     position: relative;
     touch-action: none;
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
     overflow: hidden;
-    outline: 0px solid transparent;
-    outline-offset: -3px;
   }
 
   .cell:hover {
@@ -106,6 +104,8 @@
     align-items: center;
     justify-content: center;
     pointer-events: none;
+    position: relative;
+    z-index: 1;
   }
 
   .creature img {
@@ -120,9 +120,17 @@
     pointer-events: none;
   }
 
-  .cell.threatened {
-    outline: 3px solid #c0392b;
-    outline-offset: -3px;
+  /* A single inset shadow with no spread — just blur. Maximally
+     opaque at the edge, fading smoothly inward. No separate
+     border line. */
+  .cell.threatened::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 2;
+    box-shadow: inset 0 0 16px 8px rgba(192, 57, 43, 1);
   }
 
   .cell.calm-glow {
