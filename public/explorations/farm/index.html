@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Farm</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    background: linear-gradient(180deg, #eef4e6 0%, #f5efd9 60%, #e6dcc0 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    color: #1a365d;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow-x: hidden;
+  }
+
+  h1 {
+    font-size: 30px;
+    margin: 0 0 6px 0;
+    color: #1a365d;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .question {
+    font-size: 19px;
+    margin: 0 0 32px 0;
+    color: #1a365d;
+    font-style: italic;
+    text-align: center;
+    max-width: 360px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-template-rows: repeat(3, 100px);
+    gap: 6px;
+    background: linear-gradient(135deg, #b08755 0%, #8a6a3f 100%);
+    padding: 14px;
+    border-radius: 14px;
+    box-shadow:
+      0 4px 14px rgba(60, 40, 20, 0.18),
+      inset 0 0 8px rgba(0, 0, 0, 0.15);
+    transition: box-shadow 0.6s ease;
+  }
+
+  .grid.all-calm {
+    box-shadow:
+      0 4px 14px rgba(60, 40, 20, 0.18),
+      inset 0 0 8px rgba(0, 0, 0, 0.15),
+      0 0 0 2px rgba(212, 175, 100, 0.5),
+      0 0 24px rgba(240, 210, 130, 0.45);
+  }
+
+  .cell {
+    background: #f4ecd0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    cursor: grab;
+    transition: background 0.4s, box-shadow 0.4s;
+    position: relative;
+    touch-action: none;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .cell:hover {
+    background: #faf3df;
+  }
+
+  .cell:active {
+    cursor: grabbing;
+  }
+
+  .cell.dragging .creature {
+    visibility: hidden;
+  }
+
+  .cell.drop-target {
+    background: #fff4c0;
+    box-shadow: inset 0 0 0 2px #d4a574;
+  }
+
+  .creature {
+    pointer-events: none;
+    transition: transform 0.4s ease, filter 0.4s ease;
+    line-height: 1;
+  }
+
+  .cell.shivering {
+    background: #fbe1dc;
+    animation: shiver 0.35s ease-in-out infinite;
+  }
+
+  .cell.shivering:hover {
+    background: #fbe1dc;
+  }
+
+  .cell.sulking .creature {
+    transform: rotate(-12deg) translateY(3px);
+    filter: grayscale(0.35) brightness(0.92);
+  }
+
+  .cell.calm-glow {
+    background: #f8f0d4;
+  }
+
+  .cell.calm-glow:hover {
+    background: #faf3dc;
+  }
+
+  @keyframes shiver {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2.5px); }
+    75% { transform: translateX(2.5px); }
+  }
+
+  .floating {
+    position: fixed;
+    pointer-events: none;
+    font-size: 56px;
+    z-index: 1000;
+    transform: translate(-50%, -50%) scale(1.15);
+    filter: drop-shadow(0 5px 9px rgba(0, 0, 0, 0.25));
+    line-height: 1;
+  }
+
+  .below {
+    margin-top: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+  }
+
+  .reshuffle {
+    font-size: 14px;
+    color: #1a365d;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+    text-decoration: underline;
+    padding: 4px 8px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  .reshuffle:hover {
+    opacity: 1;
+  }
+
+  @media (max-width: 380px) {
+    .grid {
+      grid-template-columns: repeat(3, 90px);
+      grid-template-rows: repeat(3, 90px);
+    }
+    .cell {
+      font-size: 50px;
+    }
+    .floating {
+      font-size: 50px;
+    }
+    h1 { font-size: 26px; }
+    .question { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>The Farm</h1>
+<p class="question">Can you keep the rabbits away from the foxes?</p>
+
+<div class="grid" id="grid"></div>
+
+<div class="below">
+  <button class="reshuffle" id="reshuffle">try another arrangement</button>
+</div>
+
+<script>
+  const FOX = '🦊';
+  const RABBIT = '🐰';
+  const FARMER = '🧑‍🌾';
+
+  // Each starting config: 3 foxes, 3 rabbits, 3 farmers, with 1–3 shivering rabbits
+  const startingConfigs = [
+    // 1 shivering
+    [RABBIT, FOX,    RABBIT,
+     FARMER, FARMER, FOX,
+     RABBIT, FARMER, FOX],
+
+    // 2 shivering (variant A)
+    [RABBIT, FOX,    RABBIT,
+     FOX,    FARMER, FOX,
+     FARMER, FARMER, RABBIT],
+
+    // 2 shivering (variant B)
+    [RABBIT, FOX,    FARMER,
+     FOX,    FARMER, RABBIT,
+     FARMER, FOX,    RABBIT],
+
+    // 3 shivering
+    [FARMER, FARMER, FARMER,
+     FOX,    FOX,    FOX,
+     RABBIT, RABBIT, RABBIT],
+  ];
+
+  let cells = [];
+  let dragging = null;
+  let lastConfigIdx = -1;
+
+  function init() {
+    let idx;
+    if (lastConfigIdx === -1) {
+      idx = 0; // start with the easiest on first load
+    } else {
+      do {
+        idx = Math.floor(Math.random() * startingConfigs.length);
+      } while (idx === lastConfigIdx);
+    }
+    lastConfigIdx = idx;
+    cells = startingConfigs[idx].slice();
+    render();
+  }
+
+  function render() {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    cells.forEach((creature, idx) => {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.idx = idx;
+
+      const cspan = document.createElement('span');
+      cspan.className = 'creature';
+      cspan.textContent = creature;
+      cell.appendChild(cspan);
+
+      cell.addEventListener('pointerdown', onPointerDown);
+      grid.appendChild(cell);
+    });
+    updateState();
+  }
+
+  function neighborsOf(idx) {
+    const r = Math.floor(idx / 3);
+    const c = idx % 3;
+    const result = [];
+    if (r > 0) result.push((r - 1) * 3 + c);
+    if (r < 2) result.push((r + 1) * 3 + c);
+    if (c > 0) result.push(r * 3 + (c - 1));
+    if (c < 2) result.push(r * 3 + (c + 1));
+    return result;
+  }
+
+  function updateState() {
+    const grid = document.getElementById('grid');
+    const cellEls = grid.querySelectorAll('.cell');
+    let allCalm = true;
+
+    cellEls.forEach((cellEl, idx) => {
+      cellEl.classList.remove('shivering', 'sulking', 'calm-glow');
+      const creature = cells[idx];
+      const nbrs = neighborsOf(idx);
+      const nbrCreatures = nbrs.map(i => cells[i]);
+
+      if (creature === RABBIT) {
+        const hasFox = nbrCreatures.includes(FOX);
+        const hasFarmer = nbrCreatures.includes(FARMER);
+        if (hasFox && !hasFarmer) {
+          cellEl.classList.add('shivering');
+          allCalm = false;
+        }
+      }
+
+      if (creature === FOX) {
+        const hasFarmer = nbrCreatures.includes(FARMER);
+        if (hasFarmer) {
+          cellEl.classList.add('sulking');
+        }
+      }
+    });
+
+    grid.classList.toggle('all-calm', allCalm);
+
+    if (allCalm) {
+      cellEls.forEach(el => el.classList.add('calm-glow'));
+    }
+  }
+
+  function onPointerDown(e) {
+    e.preventDefault();
+    const cell = e.currentTarget;
+    const idx = parseInt(cell.dataset.idx, 10);
+
+    cell.classList.add('dragging');
+
+    const floatEl = document.createElement('div');
+    floatEl.className = 'floating';
+    floatEl.textContent = cells[idx];
+    floatEl.style.left = e.clientX + 'px';
+    floatEl.style.top = e.clientY + 'px';
+    document.body.appendChild(floatEl);
+
+    dragging = { idx, cell, floatEl };
+
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('pointercancel', onPointerUp);
+  }
+
+  function onPointerMove(e) {
+    if (!dragging) return;
+    dragging.floatEl.style.left = e.clientX + 'px';
+    dragging.floatEl.style.top = e.clientY + 'px';
+
+    document.querySelectorAll('.cell.drop-target').forEach(c => c.classList.remove('drop-target'));
+    const target = elementUnderPointer(e.clientX, e.clientY);
+    if (target && target !== dragging.cell) {
+      target.classList.add('drop-target');
+    }
+  }
+
+  function elementUnderPointer(x, y) {
+    const els = document.elementsFromPoint(x, y);
+    for (const el of els) {
+      if (el.classList && el.classList.contains('cell')) return el;
+    }
+    return null;
+  }
+
+  function onPointerUp(e) {
+    if (!dragging) return;
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointerup', onPointerUp);
+    document.removeEventListener('pointercancel', onPointerUp);
+
+    const target = elementUnderPointer(e.clientX, e.clientY);
+    document.querySelectorAll('.cell.drop-target').forEach(c => c.classList.remove('drop-target'));
+
+    if (target && target !== dragging.cell) {
+      const targetIdx = parseInt(target.dataset.idx, 10);
+      const sourceIdx = dragging.idx;
+      [cells[sourceIdx], cells[targetIdx]] = [cells[targetIdx], cells[sourceIdx]];
+      render();
+    } else {
+      dragging.cell.classList.remove('dragging');
+    }
+
+    dragging.floatEl.remove();
+    dragging = null;
+  }
+
+  document.getElementById('reshuffle').addEventListener('click', init);
+
+  init();
+</script>
+
+</body>
+</html>
