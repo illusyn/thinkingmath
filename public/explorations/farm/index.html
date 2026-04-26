@@ -44,6 +44,48 @@
     max-width: 360px;
   }
 
+  .grid-wrap {
+    position: relative;
+    display: inline-block;
+  }
+
+  .grid-wrap::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 22px;
+    pointer-events: none;
+    opacity: 0;
+    box-shadow:
+      0 0 0 0 rgba(255, 220, 130, 0),
+      0 0 0 0 rgba(255, 215, 130, 0);
+  }
+
+  .grid-wrap.flash::after {
+    animation: solve-flash 1.2s ease-out 1;
+  }
+
+  @keyframes solve-flash {
+    0% {
+      opacity: 1;
+      box-shadow:
+        0 0 0 6px rgba(255, 220, 130, 1),
+        0 0 90px 30px rgba(255, 215, 130, 1);
+    }
+    25% {
+      opacity: 1;
+      box-shadow:
+        0 0 0 8px rgba(255, 220, 130, 0.95),
+        0 0 110px 40px rgba(255, 215, 130, 0.95);
+    }
+    100% {
+      opacity: 0;
+      box-shadow:
+        0 0 0 0 rgba(255, 220, 130, 0),
+        0 0 0 0 rgba(255, 215, 130, 0);
+    }
+  }
+
   .grid {
     display: grid;
     grid-template-columns: repeat(3, 110px);
@@ -55,42 +97,17 @@
     box-shadow:
       0 4px 14px rgba(60, 40, 20, 0.18),
       inset 0 0 8px rgba(0, 0, 0, 0.15);
-    transition: box-shadow 0.8s ease;
+    transition: box-shadow 0.6s ease;
+    position: relative;
+    z-index: 1;
   }
 
-  /* Sustained warm halo when solved */
   .grid.all-calm {
     box-shadow:
       0 4px 14px rgba(60, 40, 20, 0.18),
       inset 0 0 8px rgba(0, 0, 0, 0.15),
       0 0 0 3px rgba(212, 175, 100, 0.7),
       0 0 36px 8px rgba(240, 200, 110, 0.55);
-    animation: solve-flash 1.1s ease-out 1;
-  }
-
-  /* Flash: starts intense, settles to the sustained state above */
-  @keyframes solve-flash {
-    0% {
-      box-shadow:
-        0 4px 14px rgba(60, 40, 20, 0.18),
-        inset 0 0 8px rgba(0, 0, 0, 0.15),
-        0 0 0 4px rgba(255, 220, 130, 1),
-        0 0 70px 24px rgba(255, 215, 130, 0.95);
-    }
-    50% {
-      box-shadow:
-        0 4px 14px rgba(60, 40, 20, 0.18),
-        inset 0 0 8px rgba(0, 0, 0, 0.15),
-        0 0 0 4px rgba(245, 210, 130, 0.9),
-        0 0 55px 16px rgba(250, 210, 130, 0.8);
-    }
-    100% {
-      box-shadow:
-        0 4px 14px rgba(60, 40, 20, 0.18),
-        inset 0 0 8px rgba(0, 0, 0, 0.15),
-        0 0 0 3px rgba(212, 175, 100, 0.7),
-        0 0 36px 8px rgba(240, 200, 110, 0.55);
-    }
   }
 
   .cell {
@@ -182,11 +199,10 @@
     pointer-events: none;
   }
 
-  /* Solved-state text: sits close under the grid; fades in on solve */
   .solved-text {
     margin-top: 14px;
     font-size: 19px;
-    color: #1a365d;
+    color: #1ea84a;
     font-style: italic;
     text-align: center;
     opacity: 0;
@@ -241,7 +257,9 @@
 <h1>The Farm</h1>
 <p class="question">Can you keep the rabbits away from the foxes?</p>
 
-<div class="grid" id="grid"></div>
+<div class="grid-wrap" id="gridWrap">
+  <div class="grid" id="grid"></div>
+</div>
 
 <div class="solved-text" id="solvedText">The rabbits are safe.</div>
 
@@ -264,7 +282,6 @@
     return `<img src="${IMAGES[c]}" alt="${c}" draggable="false">`;
   }
 
-  // Each starting config: 3 foxes, 3 rabbits, 3 farmers
   const startingConfigs = [
     [RABBIT, FOX,    RABBIT,
      FARMER, FARMER, FOX,
@@ -335,6 +352,7 @@
 
   function updateState() {
     const grid = document.getElementById('grid');
+    const gridWrap = document.getElementById('gridWrap');
     const cellEls = grid.querySelectorAll('.cell');
     let allCalm = true;
 
@@ -352,18 +370,18 @@
       }
     });
 
-    // Re-trigger the flash animation each time the puzzle becomes calm
-    if (allCalm && !wasCalm) {
-      grid.classList.remove('all-calm');
-      // Force reflow so the animation restarts
-      void grid.offsetWidth;
-    }
-
     grid.classList.toggle('all-calm', allCalm);
     document.getElementById('solvedText').classList.toggle('visible', allCalm);
 
     if (allCalm) {
       cellEls.forEach(el => el.classList.add('calm-glow'));
+      if (!wasCalm) {
+        gridWrap.classList.remove('flash');
+        void gridWrap.offsetWidth;
+        gridWrap.classList.add('flash');
+      }
+    } else {
+      gridWrap.classList.remove('flash');
     }
 
     wasCalm = allCalm;
