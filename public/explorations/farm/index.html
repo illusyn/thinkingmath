@@ -321,6 +321,36 @@
     return `<img src="${IMAGES[c]}" alt="${c}" draggable="false">`;
   }
 
+  // Generate a random puzzle-2 configuration:
+  // 2 farmers in corner cells, 1 rabbit in a non-corner cell, foxes elsewhere.
+  function generatePuzzle2Config() {
+    const corners = [0, 2, 6, 8];
+    const nonCorners = [1, 3, 4, 5, 7];
+
+    // Pick 2 distinct corners for farmers
+    const shuffledCorners = [...corners].sort(() => Math.random() - 0.5);
+    const farmerCells = [shuffledCorners[0], shuffledCorners[1]];
+
+    // Pick a non-corner cell for the rabbit
+    const rabbitCell = nonCorners[Math.floor(Math.random() * nonCorners.length)];
+
+    // Build the configuration
+    const config = new Array(9).fill(FOX);
+    farmerCells.forEach(i => config[i] = FARMER);
+    config[rabbitCell] = RABBIT;
+
+    return config;
+  }
+
+  // Compare two configs for equality
+  function configsEqual(a, b) {
+    if (!a || !b) return false;
+    for (let i = 0; i < 9; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  }
+
   const puzzles = [
     {
       question: 'Can you keep the rabbits away from the foxes?',
@@ -342,38 +372,65 @@
          FOX,    FOX,    FOX,
          RABBIT, RABBIT, RABBIT],
       ],
+      // Initial config index for first load (others picked randomly)
+      firstConfig: 0,
+      generator: null,
     },
     {
       question: 'Keep the rabbit safe.',
       solvedText: 'The rabbit is safe.',
+      // Fixed first-load configuration matching the screenshot:
+      // farmers diagonally at corners 0 and 8, rabbit at center, foxes elsewhere
       configs: [
-        // Farmers diagonally opposite (top-left and bottom-right),
-        // rabbit in center, foxes everywhere else.
         [FARMER, FOX,    FOX,
          FOX,    RABBIT, FOX,
          FOX,    FOX,    FARMER],
       ],
+      firstConfig: 0,
+      generator: generatePuzzle2Config,
     },
   ];
 
   let currentPuzzle = 0;
   let cells = [];
   let dragging = null;
-  let lastConfigIdx = -1;
+  let lastConfig = null;
+  let firstLoadOfThisPuzzle = true;
   let wasCalm = false;
 
   function init() {
     const puzzle = puzzles[currentPuzzle];
-    let idx;
-    if (lastConfigIdx === -1 || puzzle.configs.length === 1) {
-      idx = 0;
-    } else {
+
+    let newConfig;
+
+    if (firstLoadOfThisPuzzle) {
+      // First time entering this puzzle: use the predefined first config
+      newConfig = puzzle.configs[puzzle.firstConfig].slice();
+      firstLoadOfThisPuzzle = false;
+    } else if (puzzle.generator) {
+      // Use the generator function, ensuring we don't repeat the previous config
+      let attempts = 0;
       do {
-        idx = Math.floor(Math.random() * puzzle.configs.length);
-      } while (idx === lastConfigIdx);
+        newConfig = puzzle.generator();
+        attempts++;
+      } while (configsEqual(newConfig, lastConfig) && attempts < 20);
+    } else {
+      // Pick a different config from the predefined list
+      let idx;
+      if (puzzle.configs.length === 1) {
+        idx = 0;
+      } else {
+        let attempts = 0;
+        do {
+          idx = Math.floor(Math.random() * puzzle.configs.length);
+          attempts++;
+        } while (configsEqual(puzzle.configs[idx], lastConfig) && attempts < 20);
+      }
+      newConfig = puzzle.configs[idx].slice();
     }
-    lastConfigIdx = idx;
-    cells = puzzle.configs[idx].slice();
+
+    cells = newConfig;
+    lastConfig = newConfig.slice();
     wasCalm = false;
     document.getElementById('question').textContent = puzzle.question;
     document.getElementById('solvedText').textContent = puzzle.solvedText;
@@ -463,7 +520,8 @@
 
     setTimeout(() => {
       currentPuzzle++;
-      lastConfigIdx = -1;
+      lastConfig = null;
+      firstLoadOfThisPuzzle = true;
       init();
       document.getElementById('question').classList.remove('fading');
     }, 450);
