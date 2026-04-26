@@ -27,6 +27,31 @@
     overflow-x: hidden;
   }
 
+  /* Home logo, top-left, links to landing page */
+  .home-logo {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    width: 70px;
+    height: 70px;
+    z-index: 100;
+    opacity: 0.85;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    display: block;
+  }
+
+  .home-logo:hover {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+
+  .home-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
   h1 {
     font-size: 30px;
     margin: 0 0 6px 0;
@@ -287,10 +312,15 @@
     .question { font-size: 17px; }
     .solved-text { font-size: 19px; }
     .next-puzzle { font-size: 16px; }
+    .home-logo { width: 56px; height: 56px; top: 12px; left: 12px; }
   }
 </style>
 </head>
 <body>
+
+<a href="/" class="home-logo" title="Back to Thinking Math">
+  <img src="/logo.svg" alt="Thinking Math home">
+</a>
 
 <h1>The Farm</h1>
 <p class="question" id="question">Can you keep the rabbits away from the foxes?</p>
@@ -321,20 +351,14 @@
     return `<img src="${IMAGES[c]}" alt="${c}" draggable="false">`;
   }
 
-  // Generate a random puzzle-2 configuration:
-  // 2 farmers in corner cells, 1 rabbit in a non-corner cell, foxes elsewhere.
   function generatePuzzle2Config() {
     const corners = [0, 2, 6, 8];
     const nonCorners = [1, 3, 4, 5, 7];
 
-    // Pick 2 distinct corners for farmers
     const shuffledCorners = [...corners].sort(() => Math.random() - 0.5);
     const farmerCells = [shuffledCorners[0], shuffledCorners[1]];
-
-    // Pick a non-corner cell for the rabbit
     const rabbitCell = nonCorners[Math.floor(Math.random() * nonCorners.length)];
 
-    // Build the configuration
     const config = new Array(9).fill(FOX);
     farmerCells.forEach(i => config[i] = FARMER);
     config[rabbitCell] = RABBIT;
@@ -342,7 +366,6 @@
     return config;
   }
 
-  // Compare two configs for equality
   function configsEqual(a, b) {
     if (!a || !b) return false;
     for (let i = 0; i < 9; i++) {
@@ -372,15 +395,12 @@
          FOX,    FOX,    FOX,
          RABBIT, RABBIT, RABBIT],
       ],
-      // Initial config index for first load (others picked randomly)
       firstConfig: 0,
       generator: null,
     },
     {
       question: 'Keep the rabbit safe.',
       solvedText: 'The rabbit is safe.',
-      // Fixed first-load configuration matching the screenshot:
-      // farmers diagonally at corners 0 and 8, rabbit at center, foxes elsewhere
       configs: [
         [FARMER, FOX,    FOX,
          FOX,    RABBIT, FOX,
@@ -400,22 +420,18 @@
 
   function init() {
     const puzzle = puzzles[currentPuzzle];
-
     let newConfig;
 
     if (firstLoadOfThisPuzzle) {
-      // First time entering this puzzle: use the predefined first config
       newConfig = puzzle.configs[puzzle.firstConfig].slice();
       firstLoadOfThisPuzzle = false;
     } else if (puzzle.generator) {
-      // Use the generator function, ensuring we don't repeat the previous config
       let attempts = 0;
       do {
         newConfig = puzzle.generator();
         attempts++;
       } while (configsEqual(newConfig, lastConfig) && attempts < 20);
     } else {
-      // Pick a different config from the predefined list
       let idx;
       if (puzzle.configs.length === 1) {
         idx = 0;
