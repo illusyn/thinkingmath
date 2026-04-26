@@ -8,7 +8,6 @@
   html, body {
     margin: 0;
     padding: 0;
-    height: 100%;
   }
 
   body {
@@ -18,8 +17,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 24px;
+    justify-content: flex-start;
+    padding: 40px 24px 60px;
     box-sizing: border-box;
     color: #1a365d;
     user-select: none;
@@ -27,7 +26,6 @@
     overflow-x: hidden;
   }
 
-  /* Logo styled like the landing page: 140px, centered, sits above the title */
   .home-link {
     display: block;
     text-decoration: none;
@@ -294,6 +292,7 @@
   }
 
   @media (max-width: 380px) {
+    body { padding: 24px 16px 48px; }
     .grid {
       grid-template-columns: repeat(3, 95px);
       grid-template-rows: repeat(3, 95px);
