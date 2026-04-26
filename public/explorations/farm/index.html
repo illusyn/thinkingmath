@@ -321,8 +321,6 @@
     return `<img src="${IMAGES[c]}" alt="${c}" draggable="false">`;
   }
 
-  // Two puzzles. Each has its own question text, configurations,
-  // and solved-state message.
   const puzzles = [
     {
       question: 'Can you keep the rabbits away from the foxes?',
@@ -349,11 +347,11 @@
       question: 'Keep the rabbit safe.',
       solvedText: 'The rabbit is safe.',
       configs: [
-        // Maximally chaotic: rabbit in center, foxes on all 4 sides,
-        // farmers in opposite corners. Rabbit is threatened from 4 sides.
-        [FARMER, FOX,    FARMER,
+        // Farmers diagonally opposite (top-left and bottom-right),
+        // rabbit in center, foxes everywhere else.
+        [FARMER, FOX,    FOX,
          FOX,    RABBIT, FOX,
-         FOX,    FOX,    FOX],
+         FOX,    FOX,    FARMER],
       ],
     },
   ];
@@ -435,7 +433,6 @@
     grid.classList.toggle('all-calm', allCalm);
     document.getElementById('solvedText').classList.toggle('visible', allCalm);
 
-    // Show "Next puzzle" only when this puzzle is solved AND there's another puzzle
     const hasNextPuzzle = currentPuzzle < puzzles.length - 1;
     document.getElementById('nextPuzzleBtn').classList.toggle(
       'visible',
@@ -456,11 +453,9 @@
     wasCalm = allCalm;
   }
 
-  // In-place fade transition to next puzzle
   function goToNextPuzzle() {
     if (currentPuzzle >= puzzles.length - 1) return;
 
-    // Fade out the question and creatures
     document.getElementById('question').classList.add('fading');
     document.querySelectorAll('.creature').forEach(el => el.classList.add('fading'));
     document.getElementById('solvedText').classList.remove('visible');
@@ -470,7 +465,6 @@
       currentPuzzle++;
       lastConfigIdx = -1;
       init();
-      // After init renders, fade everything back in
       document.getElementById('question').classList.remove('fading');
     }, 450);
   }
