@@ -62,21 +62,22 @@
   }
 
   .grid-wrap.flash::after {
-    animation: solve-flash 1.2s ease-out 1;
+    animation: solve-flash 1.6s ease-out 1;
   }
 
+  /* Stronger flash: bigger ring, longer hold, brighter peak */
   @keyframes solve-flash {
     0% {
       opacity: 1;
       box-shadow:
-        0 0 0 6px rgba(255, 220, 130, 1),
-        0 0 90px 30px rgba(255, 215, 130, 1);
+        0 0 0 12px rgba(255, 230, 140, 1),
+        0 0 140px 60px rgba(255, 220, 130, 1);
     }
-    25% {
+    35% {
       opacity: 1;
       box-shadow:
-        0 0 0 8px rgba(255, 220, 130, 0.95),
-        0 0 110px 40px rgba(255, 215, 130, 0.95);
+        0 0 0 14px rgba(255, 225, 140, 0.95),
+        0 0 160px 80px rgba(255, 220, 130, 0.95);
     }
     100% {
       opacity: 0;
@@ -199,10 +200,12 @@
     pointer-events: none;
   }
 
+  /* Brighter green, bolder weight */
   .solved-text {
     margin-top: 14px;
-    font-size: 19px;
-    color: #1ea84a;
+    font-size: 21px;
+    font-weight: 700;
+    color: #22c55e;
     font-style: italic;
     text-align: center;
     opacity: 0;
@@ -248,7 +251,7 @@
     }
     h1 { font-size: 26px; }
     .question { font-size: 17px; }
-    .solved-text { font-size: 17px; }
+    .solved-text { font-size: 19px; }
   }
 </style>
 </head>
