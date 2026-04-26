@@ -27,28 +27,22 @@
     overflow-x: hidden;
   }
 
-  /* Home logo, top-left, links to landing page */
-  .home-logo {
-    position: fixed;
-    top: 18px;
-    left: 18px;
-    width: 70px;
-    height: 70px;
-    z-index: 100;
-    opacity: 0.85;
-    transition: opacity 0.2s ease, transform 0.2s ease;
+  /* Logo styled like the landing page: 140px, centered, sits above the title */
+  .home-link {
     display: block;
+    text-decoration: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
   }
 
-  .home-logo:hover {
-    opacity: 1;
-    transform: scale(1.04);
+  .home-link:hover {
+    opacity: 0.85;
+    transform: scale(1.02);
   }
 
-  .home-logo img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+  .site-logo {
+    width: 140px;
+    height: 140px;
+    margin: 0 auto 16px;
     display: block;
   }
 
@@ -308,18 +302,18 @@
       width: 86px;
       height: 86px;
     }
+    .site-logo { width: 110px; height: 110px; }
     h1 { font-size: 26px; }
     .question { font-size: 17px; }
     .solved-text { font-size: 19px; }
     .next-puzzle { font-size: 16px; }
-    .home-logo { width: 56px; height: 56px; top: 12px; left: 12px; }
   }
 </style>
 </head>
 <body>
 
-<a href="/" class="home-logo" title="Back to Thinking Math">
-  <img src="/logo.svg" alt="Thinking Math home">
+<a href="/" class="home-link" title="Back to Thinking Math">
+  <img src="/logo.svg" alt="Thinking Math" class="site-logo">
 </a>
 
 <h1>The Farm</h1>
