@@ -42,6 +42,11 @@
     font-style: italic;
     text-align: center;
     max-width: 360px;
+    transition: opacity 0.4s ease;
+  }
+
+  .question.fading {
+    opacity: 0;
   }
 
   .grid-wrap {
@@ -65,7 +70,6 @@
     animation: solve-flash 1.6s ease-out 1;
   }
 
-  /* Stronger flash: bigger ring, longer hold, brighter peak */
   @keyframes solve-flash {
     0% {
       opacity: 1;
@@ -151,6 +155,11 @@
     pointer-events: none;
     position: relative;
     z-index: 1;
+    transition: opacity 0.4s ease;
+  }
+
+  .creature.fading {
+    opacity: 0;
   }
 
   .creature img {
@@ -200,7 +209,6 @@
     pointer-events: none;
   }
 
-  /* Brighter green, bolder weight */
   .solved-text {
     margin-top: 14px;
     font-size: 21px;
@@ -215,6 +223,32 @@
 
   .solved-text.visible {
     opacity: 1;
+  }
+
+  .next-puzzle {
+    margin-top: 8px;
+    font-size: 17px;
+    color: #1a365d;
+    font-style: italic;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+    padding: 6px 12px;
+    opacity: 0;
+    transition: opacity 0.6s ease 0.6s;
+    pointer-events: none;
+    text-align: center;
+  }
+
+  .next-puzzle.visible {
+    opacity: 0.85;
+    pointer-events: auto;
+  }
+
+  .next-puzzle:hover {
+    opacity: 1;
+    text-decoration: underline;
   }
 
   .below {
@@ -252,19 +286,21 @@
     h1 { font-size: 26px; }
     .question { font-size: 17px; }
     .solved-text { font-size: 19px; }
+    .next-puzzle { font-size: 16px; }
   }
 </style>
 </head>
 <body>
 
 <h1>The Farm</h1>
-<p class="question">Can you keep the rabbits away from the foxes?</p>
+<p class="question" id="question">Can you keep the rabbits away from the foxes?</p>
 
 <div class="grid-wrap" id="gridWrap">
   <div class="grid" id="grid"></div>
 </div>
 
 <div class="solved-text" id="solvedText">The rabbits are safe.</div>
+<button class="next-puzzle" id="nextPuzzleBtn">Next puzzle →</button>
 
 <div class="below">
   <button class="reshuffle" id="reshuffle">try another arrangement</button>
@@ -285,41 +321,64 @@
     return `<img src="${IMAGES[c]}" alt="${c}" draggable="false">`;
   }
 
-  const startingConfigs = [
-    [RABBIT, FOX,    RABBIT,
-     FARMER, FARMER, FOX,
-     RABBIT, FARMER, FOX],
+  // Two puzzles. Each has its own question text, configurations,
+  // and solved-state message.
+  const puzzles = [
+    {
+      question: 'Can you keep the rabbits away from the foxes?',
+      solvedText: 'The rabbits are safe.',
+      configs: [
+        [RABBIT, FOX,    RABBIT,
+         FARMER, FARMER, FOX,
+         RABBIT, FARMER, FOX],
 
-    [RABBIT, FOX,    RABBIT,
-     FOX,    FARMER, FOX,
-     FARMER, FARMER, RABBIT],
+        [RABBIT, FOX,    RABBIT,
+         FOX,    FARMER, FOX,
+         FARMER, FARMER, RABBIT],
 
-    [RABBIT, FOX,    FARMER,
-     FOX,    FARMER, RABBIT,
-     FARMER, FOX,    RABBIT],
+        [RABBIT, FOX,    FARMER,
+         FOX,    FARMER, RABBIT,
+         FARMER, FOX,    RABBIT],
 
-    [FARMER, FARMER, FARMER,
-     FOX,    FOX,    FOX,
-     RABBIT, RABBIT, RABBIT],
+        [FARMER, FARMER, FARMER,
+         FOX,    FOX,    FOX,
+         RABBIT, RABBIT, RABBIT],
+      ],
+    },
+    {
+      question: 'Keep the rabbit safe.',
+      solvedText: 'The rabbit is safe.',
+      configs: [
+        // Maximally chaotic: rabbit in center, foxes on all 4 sides,
+        // farmers in opposite corners. Rabbit is threatened from 4 sides.
+        [FARMER, FOX,    FARMER,
+         FOX,    RABBIT, FOX,
+         FOX,    FOX,    FOX],
+      ],
+    },
   ];
 
+  let currentPuzzle = 0;
   let cells = [];
   let dragging = null;
   let lastConfigIdx = -1;
   let wasCalm = false;
 
   function init() {
+    const puzzle = puzzles[currentPuzzle];
     let idx;
-    if (lastConfigIdx === -1) {
+    if (lastConfigIdx === -1 || puzzle.configs.length === 1) {
       idx = 0;
     } else {
       do {
-        idx = Math.floor(Math.random() * startingConfigs.length);
+        idx = Math.floor(Math.random() * puzzle.configs.length);
       } while (idx === lastConfigIdx);
     }
     lastConfigIdx = idx;
-    cells = startingConfigs[idx].slice();
+    cells = puzzle.configs[idx].slice();
     wasCalm = false;
+    document.getElementById('question').textContent = puzzle.question;
+    document.getElementById('solvedText').textContent = puzzle.solvedText;
     render();
   }
 
@@ -376,6 +435,13 @@
     grid.classList.toggle('all-calm', allCalm);
     document.getElementById('solvedText').classList.toggle('visible', allCalm);
 
+    // Show "Next puzzle" only when this puzzle is solved AND there's another puzzle
+    const hasNextPuzzle = currentPuzzle < puzzles.length - 1;
+    document.getElementById('nextPuzzleBtn').classList.toggle(
+      'visible',
+      allCalm && hasNextPuzzle
+    );
+
     if (allCalm) {
       cellEls.forEach(el => el.classList.add('calm-glow'));
       if (!wasCalm) {
@@ -388,6 +454,25 @@
     }
 
     wasCalm = allCalm;
+  }
+
+  // In-place fade transition to next puzzle
+  function goToNextPuzzle() {
+    if (currentPuzzle >= puzzles.length - 1) return;
+
+    // Fade out the question and creatures
+    document.getElementById('question').classList.add('fading');
+    document.querySelectorAll('.creature').forEach(el => el.classList.add('fading'));
+    document.getElementById('solvedText').classList.remove('visible');
+    document.getElementById('nextPuzzleBtn').classList.remove('visible');
+
+    setTimeout(() => {
+      currentPuzzle++;
+      lastConfigIdx = -1;
+      init();
+      // After init renders, fade everything back in
+      document.getElementById('question').classList.remove('fading');
+    }, 450);
   }
 
   function onPointerDown(e) {
@@ -454,6 +539,7 @@
   }
 
   document.getElementById('reshuffle').addEventListener('click', init);
+  document.getElementById('nextPuzzleBtn').addEventListener('click', goToNextPuzzle);
 
   init();
 </script>
