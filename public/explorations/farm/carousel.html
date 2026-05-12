@@ -374,6 +374,136 @@
   }
   .threshold.open .close-btn { opacity: 1; }
   .close-btn:hover { background: rgba(40,36,28,1); }
+
+  /* ---------- Farm foyer (inside the expanded wood frame) ---------- */
+  .threshold-frame.has-foyer .window {
+    justify-content: flex-start;
+    padding: 64px 24px 32px;
+    background:
+      radial-gradient(80% 60% at 50% 0%, #f6efd1 0%, transparent 70%),
+      linear-gradient(180deg, #eef4e6 0%, #f5efd9 60%, #e6dcc0 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .foyer-content {
+    display: flex; flex-direction: column; align-items: center;
+    width: 100%;
+    gap: 12px;
+    opacity: 0;
+    transition: opacity 0.5s ease 0.4s;
+  }
+  .threshold.open .foyer-content { opacity: 1; }
+
+  .foyer-back {
+    position: absolute;
+    top: 22px; left: 22px;
+    display: flex; align-items: center; gap: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    color: #1a365d;
+    background: rgba(255, 250, 235, 0.7);
+    border: 1px solid rgba(26,54,93,0.15);
+    border-radius: 999px;
+    padding: 8px 14px 8px 10px;
+    cursor: pointer;
+    z-index: 5;
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    transition: opacity 0.5s ease 0.5s, background 0.2s;
+  }
+  .threshold.open .foyer-back { opacity: 1; }
+  .foyer-back:hover { background: #fff; }
+
+  .foyer-title-big {
+    font-family: inherit;
+    font-weight: normal;
+    font-size: clamp(28px, 4vw, 42px);
+    color: #1a365d;
+    margin: 0 0 4px;
+    text-align: center;
+  }
+  .foyer-prompt {
+    font-style: italic;
+    font-size: clamp(15px, 1.4vw, 18px);
+    color: #2a3f66;
+    margin: 0 0 12px;
+    text-align: center;
+    max-width: 480px;
+  }
+
+  .farm-grid-wrap { position: relative; }
+  .farm-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 110px);
+    grid-template-rows: repeat(3, 110px);
+    gap: 6px;
+    background: linear-gradient(135deg, #b08755, #8a6a3f);
+    padding: 14px;
+    border-radius: 14px;
+    box-shadow:
+      0 4px 14px rgba(60,40,20,0.18),
+      inset 0 0 8px rgba(0,0,0,0.15);
+    transition: box-shadow 0.5s;
+  }
+  .farm-grid-wrap.solved .farm-grid {
+    box-shadow:
+      0 4px 14px rgba(60,40,20,0.18),
+      inset 0 0 8px rgba(0,0,0,0.15),
+      0 0 0 3px rgba(212,175,100,0.7),
+      0 0 36px 8px rgba(240,200,110,0.55);
+  }
+  .farm-cell {
+    background: #f4ecd0;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: grab;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.5s, box-shadow 0.4s;
+    touch-action: none;
+    user-select: none;
+  }
+  .farm-cell:hover { background: #faf3df; }
+  .farm-cell.dragging img { visibility: hidden; }
+  .farm-cell.drop { background: #fff4c0; box-shadow: inset 0 0 0 2px #d4a574; }
+  .farm-cell img {
+    width: 100px; height: 100px; object-fit: contain;
+    pointer-events: none; -webkit-user-drag: none;
+  }
+  .farm-cell.threatened::after {
+    content: ''; position: absolute; inset: 4px;
+    border-radius: 6px;
+    box-shadow: inset 0 0 8px 4px rgba(192,57,43,1);
+    pointer-events: none;
+  }
+  .farm-cell.calm { background: #faf2d8; }
+
+  .farm-solved {
+    margin-top: 8px;
+    font-style: italic;
+    font-size: 20px;
+    color: #1d8a4a;
+    opacity: 0;
+    transition: opacity 0.9s ease 0.2s;
+  }
+  .farm-solved.on { opacity: 1; }
+
+  .float-creature {
+    position: fixed; width: 100px; height: 100px;
+    transform: translate(-50%, -50%) scale(1.15);
+    pointer-events: none; z-index: 1000;
+    filter: drop-shadow(0 5px 9px rgba(0,0,0,0.25));
+  }
+  .float-creature img { width: 100%; height: 100%; object-fit: contain; }
+
+  @media (max-height: 700px) {
+    .farm-grid {
+      grid-template-columns: repeat(3, 88px);
+      grid-template-rows: repeat(3, 88px);
+    }
+    .farm-cell img { width: 80px; height: 80px; }
+  }
 </style>
 </head>
 <body>
@@ -658,7 +788,7 @@
     document.getElementById('glideV').textContent = tweaks.glideMs + 'ms';
   });
 
-  /* ---------- Threshold (frame expand) ---------- */
+  /* ---------- Threshold (frame expand) + foyers ---------- */
   function enterStage(i) {
     const stage = STAGES[i];
     const slots = track.querySelectorAll('.slot');
@@ -670,17 +800,43 @@
     const overlay = document.createElement('div');
     overlay.className = 'threshold';
     overlay.style.setProperty('--ms', ms + 'ms');
-    overlay.innerHTML = `
-      <div class="threshold-dim"></div>
-      <div class="threshold-frame stage-${stage.kind}"
-           style="left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;">
-        <div class="window">
-          <h1 class="foyer-title">${stage.title}</h1>
-          <p class="foyer-sub">${stage.sub}</p>
-          <button class="close-btn" type="button">close</button>
+
+    const isFarm = stage.kind === 'wood';
+    const frameClasses = `threshold-frame stage-${stage.kind}${isFarm ? ' has-foyer' : ''}`;
+    const frameStyle = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;`;
+
+    if (isFarm) {
+      overlay.innerHTML = `
+        <div class="threshold-dim"></div>
+        <div class="${frameClasses}" style="${frameStyle}">
+          <div class="window">
+            <button class="foyer-back" type="button" aria-label="Back to the lobby">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>back to the lobby</span>
+            </button>
+            <div class="foyer-content">
+              <h1 class="foyer-title-big">The Farm</h1>
+              <p class="foyer-prompt">Can you keep the rabbits away from the foxes?</p>
+              <div class="farm-grid-wrap"><div class="farm-grid"></div></div>
+              <div class="farm-solved">The rabbits are safe.</div>
+            </div>
+          </div>
         </div>
-      </div>
-    `;
+      `;
+    } else {
+      overlay.innerHTML = `
+        <div class="threshold-dim"></div>
+        <div class="${frameClasses}" style="${frameStyle}">
+          <div class="window">
+            <h1 class="foyer-title">${stage.title}</h1>
+            <p class="foyer-sub">${stage.sub}</p>
+            <button class="close-btn" type="button">close</button>
+          </div>
+        </div>
+      `;
+    }
     document.body.appendChild(overlay);
 
     requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -694,6 +850,8 @@
     }));
 
     const close = () => {
+      /* clean up any in-progress drag floater before closing */
+      document.querySelectorAll('.float-creature').forEach(el => el.remove());
       overlay.classList.remove('open');
       const f = overlay.querySelector('.threshold-frame');
       f.style.left = r.left + 'px';
@@ -703,8 +861,120 @@
       f.style.borderRadius = '6px';
       setTimeout(() => overlay.remove(), ms);
     };
-    overlay.querySelector('.close-btn').addEventListener('click', close);
-    overlay.querySelector('.threshold-dim').addEventListener('click', close);
+
+    if (isFarm) {
+      setupFarmFoyer(overlay);
+      overlay.querySelector('.foyer-back').addEventListener('click', close);
+    } else {
+      overlay.querySelector('.close-btn').addEventListener('click', close);
+      overlay.querySelector('.threshold-dim').addEventListener('click', close);
+    }
+  }
+
+  /* ---------- Farm foyer interaction ---------- */
+  function setupFarmFoyer(overlay) {
+    const FOX = 'fox', RABBIT = 'rabbit', FARMER = 'farmer';
+    const IMG = { fox: 'fox.jpg', rabbit: 'rabbit.jpg', farmer: 'farmer.jpg' };
+    const INITIAL = [
+      RABBIT, FOX,    RABBIT,
+      FARMER, FARMER, FOX,
+      RABBIT, FARMER, FOX,
+    ];
+
+    const cells = INITIAL.slice();
+    let dragIdx = null;
+    let floater = null;
+
+    const grid = overlay.querySelector('.farm-grid');
+    const wrap = overlay.querySelector('.farm-grid-wrap');
+    const solvedMsg = overlay.querySelector('.farm-solved');
+
+    const neighborsOf = (i) => {
+      const r = Math.floor(i / 3), c = i % 3, out = [];
+      if (r > 0) out.push((r - 1) * 3 + c);
+      if (r < 2) out.push((r + 1) * 3 + c);
+      if (c > 0) out.push(r * 3 + (c - 1));
+      if (c < 2) out.push(r * 3 + (c + 1));
+      return out;
+    };
+    const isThreatened = (i) =>
+      cells[i] === RABBIT && neighborsOf(i).some(n => cells[n] === FOX);
+    const isSolved = () => !cells.some((_, i) => isThreatened(i));
+
+    function paint(hoverIdx = null) {
+      const solved = isSolved();
+      grid.querySelectorAll('.farm-cell').forEach((el, i) => {
+        el.classList.toggle('threatened', isThreatened(i));
+        el.classList.toggle('calm', solved);
+        el.classList.toggle('dragging', dragIdx === i);
+        el.classList.toggle('drop', hoverIdx === i && dragIdx !== null && dragIdx !== i);
+        const img = el.querySelector('img');
+        img.src = IMG[cells[i]];
+        img.alt = cells[i];
+      });
+      wrap.classList.toggle('solved', solved);
+      solvedMsg.classList.toggle('on', solved);
+    }
+
+    function showFloater(x, y, kind) {
+      floater = document.createElement('div');
+      floater.className = 'float-creature';
+      floater.style.left = x + 'px';
+      floater.style.top = y + 'px';
+      floater.innerHTML = `<img src="${IMG[kind]}" alt="">`;
+      document.body.appendChild(floater);
+    }
+    function moveFloater(x, y) {
+      if (!floater) return;
+      floater.style.left = x + 'px';
+      floater.style.top = y + 'px';
+    }
+    function hideFloater() {
+      if (floater) { floater.remove(); floater = null; }
+    }
+
+    function onDown(i, e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragIdx = i;
+      showFloater(e.clientX, e.clientY, cells[i]);
+      paint();
+
+      const onMove = (ev) => {
+        moveFloater(ev.clientX, ev.clientY);
+        const els = document.elementsFromPoint(ev.clientX, ev.clientY);
+        const target = els.find(el => el.dataset && el.dataset.farmIdx !== undefined);
+        const ti = target ? parseInt(target.dataset.farmIdx, 10) : null;
+        paint(ti);
+      };
+      const onUp = (ev) => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        const els = document.elementsFromPoint(ev.clientX, ev.clientY);
+        const target = els.find(el => el.dataset && el.dataset.farmIdx !== undefined);
+        if (target) {
+          const ti = parseInt(target.dataset.farmIdx, 10);
+          if (ti !== i) {
+            [cells[i], cells[ti]] = [cells[ti], cells[i]];
+          }
+        }
+        dragIdx = null;
+        hideFloater();
+        paint();
+      };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    }
+
+    cells.forEach((kind, i) => {
+      const cell = document.createElement('div');
+      cell.dataset.farmIdx = i;
+      cell.className = 'farm-cell';
+      cell.innerHTML = `<img src="${IMG[kind]}" alt="${kind}" draggable="false">`;
+      cell.addEventListener('pointerdown', (e) => onDown(i, e));
+      grid.appendChild(cell);
+    });
+    paint();
   }
 
   /* ---------- Boot ---------- */
