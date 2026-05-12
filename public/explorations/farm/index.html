@@ -425,12 +425,19 @@
       radial-gradient(80% 60% at 50% 0%, #f6efd1 0%, transparent 70%),
       linear-gradient(180deg, #eef4e6 0%, #f5efd9 60%, #e6dcc0 100%);
   }
-  /* Colored theme: painted-paper background image */
+  /* Colored theme: the puzzle is loaded full-bleed in an iframe;
+     no window padding/background needed since the iframe covers it. */
   .threshold-frame.has-foyer-colored .window {
-    background-image: url('colored-bg.jpg');
-    background-size: cover;
-    background-position: center;
+    padding: 0;
   }
+  .colored-puzzle-iframe {
+    width: 100%; height: 100%;
+    border: 0;
+    display: block;
+    opacity: 0;
+    transition: opacity 0.5s ease 0.4s;
+  }
+  .threshold.open .colored-puzzle-iframe { opacity: 1; }
   .foyer-content {
     display: flex; flex-direction: column; align-items: center;
     width: 100%;
@@ -945,14 +952,10 @@
         <div class="${frameClasses}" style="${frameStyle}">
           <div class="window">
             ${backBtn(true)}
-            <div class="foyer-content">
-              <div class="foyer-header-card">
-                <h1 class="foyer-title-big">Colored Squares</h1>
-                <p class="foyer-prompt">Tap to recolor. Each red wants two yellows beside it.</p>
-              </div>
-              <div class="cs-foyer-grid"></div>
-              <div class="cs-foyer-cap">a small piece of the larger room</div>
-            </div>
+            <iframe class="colored-puzzle-iframe"
+                    src="../coloredsquarepuzzles/index.html"
+                    title="Colored Squares puzzle"
+                    loading="eager"></iframe>
           </div>
         </div>
       `;
@@ -995,29 +998,12 @@
 
     if (hasFoyer) {
       if (isFarm) setupFarmFoyer(overlay);
-      else if (isColored) setupColoredFoyer(overlay);
+      /* colored foyer is just an iframe — no JS wiring needed beyond back btn */
       overlay.querySelector('.foyer-back').addEventListener('click', close);
     } else {
       overlay.querySelector('.close-btn').addEventListener('click', close);
       overlay.querySelector('.threshold-dim').addEventListener('click', close);
     }
-  }
-
-  /* ---------- Colored Squares foyer interaction ---------- */
-  function setupColoredFoyer(overlay) {
-    const tiles = ['Y','R','Y', 'B','Y','B', 'Y','R','Y'];
-    const cycle = (c) => c === 'R' ? 'Y' : c === 'Y' ? 'B' : 'R';
-    const grid = overlay.querySelector('.cs-foyer-grid');
-
-    tiles.forEach((color, i) => {
-      const tile = document.createElement('div');
-      tile.className = `cs-tile cs-${color} clickable`;
-      tile.addEventListener('click', () => {
-        tiles[i] = cycle(tiles[i]);
-        tile.className = `cs-tile cs-${tiles[i]} clickable`;
-      });
-      grid.appendChild(tile);
-    });
   }
 
   /* ---------- Farm foyer interaction ---------- */
