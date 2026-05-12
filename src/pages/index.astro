@@ -142,10 +142,6 @@
             overflow: hidden;
         }
 
-        .card-icon.colored-squares {
-            background: linear-gradient(135deg, var(--red) 33%, var(--blue) 33% 66%, var(--gold) 66%);
-        }
-
         .card-icon.farm {
             background: #faf2d8;
         }
@@ -155,21 +151,6 @@
             height: 100%;
             object-fit: contain;
             display: block;
-        }
-
-        .card-icon.logical-shapes {
-            background: var(--blue);
-            opacity: 0.7;
-        }
-
-        .card-icon.area-puzzles {
-            background: var(--green);
-            opacity: 0.7;
-        }
-
-        .card-icon.perimeter-pens {
-            background: var(--gold);
-            opacity: 0.7;
         }
 
         .card-body {
@@ -201,16 +182,6 @@
         .badge-live {
             background: #e8f8f0;
             color: var(--green);
-        }
-
-        .badge-soon {
-            background: var(--warm);
-            color: var(--muted);
-        }
-
-        .card-disabled {
-            opacity: 0.55;
-            pointer-events: none;
         }
 
         /* --- About section --- */
@@ -296,47 +267,11 @@
                 <img src="/explorations/farm/fox.jpg" alt="">
             </div>
             <div class="card-body">
-                <div class="card-title">The Farm</div>
-                <div class="card-desc">Foxes, rabbits, and farmers on a small grid. Can you keep the rabbits safe?</div>
+                <div class="card-title">The Lobby</div>
+                <div class="card-desc">A small lobby of visual math puzzles. Step inside.</div>
             </div>
             <span class="card-badge badge-live">Live</span>
         </a>
-
-        <a href="/explorations/coloredsquarepuzzles/index.html" class="activity-card">
-            <div class="card-icon colored-squares"></div>
-            <div class="card-body">
-                <div class="card-title">Colored Squares</div>
-                <div class="card-desc">Arrange colored tiles on a grid to satisfy adjacency rules. Learn mathematical notation through hands-on puzzles.</div>
-            </div>
-            <span class="card-badge badge-live">Live</span>
-        </a>
-
-        <div class="activity-card card-disabled">
-            <div class="card-icon logical-shapes"></div>
-            <div class="card-body">
-                <div class="card-title">Logical Shapes</div>
-                <div class="card-desc">Place shapes inside shapes following simple rules. Discover why only certain arrangements work.</div>
-            </div>
-            <span class="card-badge badge-soon">Coming soon</span>
-        </div>
-
-        <div class="activity-card card-disabled">
-            <div class="card-icon area-puzzles"></div>
-            <div class="card-body">
-                <div class="card-title">Hidden Area</div>
-                <div class="card-desc">Figure out what's hiding under the big square. Build spatial reasoning and area concepts.</div>
-            </div>
-            <span class="card-badge badge-soon">Coming soon</span>
-        </div>
-
-        <div class="activity-card card-disabled">
-            <div class="card-icon perimeter-pens"></div>
-            <div class="card-body">
-                <div class="card-title">Fencing Puzzles</div>
-                <div class="card-desc">How much fencing do you need? Compound shapes where shared edges make perimeter surprising.</div>
-            </div>
-            <span class="card-badge badge-soon">Coming soon</span>
-        </div>
 
     </div>
 
