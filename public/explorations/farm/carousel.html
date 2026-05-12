@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Carousel — push to glide</title>
+<title>Thinking Math — Lobby</title>
+<link rel="icon" href="/logo.svg" type="image/svg+xml" />
 <style>
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -18,8 +19,20 @@
     padding-bottom: 100px; /* clearance for fixed tweaks bar */
   }
 
-  header { text-align: center; padding: 28px 24px 4px; }
-  h1 { font-weight: normal; font-size: 26px; margin: 0 0 4px; }
+  header {
+    text-align: center;
+    padding: 24px 24px 4px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  header .logo-link { display: inline-block; line-height: 0; }
+  header .logo-link img { display: block; }
+  h1 { font-weight: normal; font-size: 26px; margin: 6px 0 0; letter-spacing: 0.005em; }
+  .lobby-sub {
+    font-style: italic;
+    font-size: 15px;
+    color: #9b9180;
+    margin: 0;
+  }
   .label {
     font-style: italic;
     font-size: 16px;
@@ -266,7 +279,9 @@
     border-radius: 4px;
   }
 
-  /* ---------- Tweaks bar ---------- */
+  /* ---------- Tweaks bar (hidden by default; gear toggles) ---------- */
+  body:not(.tweaks-on) .tweaks { display: none; }
+  body.tweaks-on #tweaks-gear { display: none; }
   .tweaks {
     position: fixed;
     left: 50%;
@@ -282,6 +297,27 @@
     border-radius: 999px;
     backdrop-filter: blur(8px);
     z-index: 50;
+  }
+  #tweaks-gear {
+    position: fixed;
+    right: 14px; bottom: 14px;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    border: 1px solid rgba(241, 234, 212, .2);
+    background: rgba(20, 18, 14, .55);
+    color: rgba(241, 234, 212, .55);
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
+    z-index: 55;
+    opacity: 0.5;
+    transition: opacity 0.2s, transform 0.15s, background 0.2s;
+  }
+  #tweaks-gear:hover {
+    opacity: 1;
+    background: rgba(40, 36, 28, 0.85);
+    transform: scale(1.05);
   }
   .tweaks label { display: flex; align-items: center; gap: 8px; }
   .tweaks input[type=range] { accent-color: #d4a017; width: 100px; }
@@ -567,10 +603,14 @@
 </head>
 <body>
   <header>
-    <h1>Carousel — three framed stages</h1>
+    <a href="/" class="logo-link" aria-label="Thinking Math home">
+      <img src="/logo.svg" alt="" width="56" height="56">
+    </a>
+    <h1>Thinking Math</h1>
+    <p class="lobby-sub">a small lobby of puzzles · thinkingmath.org</p>
     <div class="label">
       <span class="step-mark">↞</span>
-      <span>push to glide · click the centered card</span>
+      <span>push to glide</span>
       <span class="step-mark">↠</span>
     </div>
   </header>
@@ -591,6 +631,12 @@
     <label>spacing <input type="range" id="peek" min="0" max="45" step="1" value="45"><span class="val" id="peekV">45%</span></label>
     <label>glide <input type="range" id="glide" min="200" max="2000" step="50" value="2000"><span class="val" id="glideV">2000ms</span></label>
   </div>
+
+  <button id="tweaks-gear" type="button" aria-label="Show tweaks (T)" title="Tweaks (T)">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <path fill="currentColor" d="M19.14 12.94a7.97 7.97 0 0 0 .05-.94 7.97 7.97 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.6 7.6 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.55-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.62 8.84a.5.5 0 0 0 .12.64l2.03 1.58a7.97 7.97 0 0 0-.05.94c0 .32.02.63.05.94L2.74 14.52a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .61.22l2.39-.96c.5.39 1.04.7 1.63.94l.36 2.54a.5.5 0 0 0 .5.42h3.84a.5.5 0 0 0 .5-.42l.36-2.54a7.6 7.6 0 0 0 1.63-.94l2.39.96a.5.5 0 0 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.02-1.58zM12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5z"/>
+    </svg>
+  </button>
 
 <script>
   const STAGES = [
@@ -1079,6 +1125,15 @@
     });
     paint();
   }
+
+  /* ---------- Tweaks gear: hidden by default, click or 'T' to toggle ---------- */
+  document.getElementById('tweaks-gear').addEventListener('click', () => {
+    document.body.classList.toggle('tweaks-on');
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.target.matches('input, textarea, select, button')) return;
+    if (e.key === 't' || e.key === 'T') document.body.classList.toggle('tweaks-on');
+  });
 
   /* ---------- Boot ---------- */
   buildSlots();
