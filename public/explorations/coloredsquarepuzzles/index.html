@@ -500,6 +500,9 @@ function renderGrid() {
 
 function renderCheck() {
   const banner = document.getElementById('solved-banner');
+  /* fire the celebration overlay whenever the puzzle becomes solved,
+     regardless of whether the user has pressed the Check button */
+  maybeCelebrate();
   if (!checking) {
     banner.classList.remove('show');
     tiles.forEach((_,i) => {
@@ -518,7 +521,6 @@ function renderCheck() {
     if (m) { m.textContent = pass ? '✓' : '✕'; m.style.display = 'block'; }
   });
   banner.classList.toggle('show', allPass);
-  maybeCelebrate();
 }
 
 /* Track solve state for the celebration overlay — fire only on false→true */
