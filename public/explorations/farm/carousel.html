@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Carousel — push to glide</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: #f1ead4;
+    min-height: 100vh;
+    background:
+      radial-gradient(120% 80% at 50% -20%, #1a1814 0%, transparent 60%),
+      linear-gradient(180deg, #0c0b09 0%, #050505 100%);
+    overflow-x: hidden;
+    padding-bottom: 100px; /* clearance for fixed tweaks bar */
+  }
+
+  header { text-align: center; padding: 28px 24px 4px; }
+  h1 { font-weight: normal; font-size: 26px; margin: 0 0 4px; }
+  .label {
+    font-style: italic;
+    font-size: 16px;
+    color: #9b9180;
+    margin: 4px auto 8px;
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    letter-spacing: 0.04em;
+  }
+  .step-mark { color: #f1ead4; opacity: 0.55; font-size: 20px; }
+
+  /* ---------- Carousel ---------- */
+  .carousel-wrap {
+    position: relative;
+    padding: 24px 0 32px;
+  }
+  .track {
+    width: 100%;
+    /* clip horizontally only — cards can extend vertically in full */
+    overflow-x: clip;
+    overflow-y: visible;
+    cursor: grab;
+    touch-action: pan-y;
+    padding: 28px 0 24px;
+    perspective: 1400px;
+    perspective-origin: 50% 50%;
+  }
+  .track.dragging { cursor: grabbing; }
+  .track-inner {
+    display: flex;
+    align-items: center;
+    transform-style: preserve-3d;
+    width: max-content;
+    padding: 0 var(--side-pad, 0px);
+    will-change: transform;
+  }
+  .slot {
+    flex: 0 0 var(--slot-w, 540px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 14px;
+    transition: opacity 0.25s linear;
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+
+  /* Edge fades */
+  .carousel-wrap::before,
+  .carousel-wrap::after {
+    content: '';
+    position: absolute;
+    top: 28px; bottom: 96px;
+    width: 80px;
+    pointer-events: none;
+    z-index: 4;
+  }
+  .carousel-wrap::before {
+    left: 0;
+    background: linear-gradient(to right, rgba(8,7,5,0.95), transparent);
+  }
+  .carousel-wrap::after {
+    right: 0;
+    background: linear-gradient(to left, rgba(8,7,5,0.95), transparent);
+  }
+
+  /* Controls (arrows + dots) */
+  .controls {
+    display: flex; align-items: center; justify-content: center; gap: 18px;
+    margin-top: 16px;
+    z-index: 6;
+  }
+  .arrow {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(241,234,212,0.25);
+    background: rgba(20,18,14,0.72);
+    color: #f1ead4;
+    font-size: 26px; line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transition: transform 0.15s, background 0.2s;
+    font-family: inherit;
+  }
+  .arrow:hover { background: rgba(40,36,28,0.95); transform: scale(1.05); }
+  .dots { display: flex; gap: 10px; }
+  .dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    border: 1.5px solid #f1ead4;
+    background: transparent;
+    padding: 0; cursor: pointer;
+    opacity: 0.45;
+    transition: opacity 0.2s, background 0.2s, transform 0.2s;
+  }
+  .dot.on { background: #f1ead4; opacity: 1; transform: scale(1.15); }
+
+  /* ---------- Stage card ---------- */
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    display: flex; flex-direction: column; align-items: center;
+    user-select: none;
+    cursor: pointer;
+    transform: scale(0.84) translateY(8px);
+    filter: saturate(0.85) brightness(0.96);
+    transition:
+      transform 0.45s cubic-bezier(.2,.7,.2,1),
+      filter 0.4s;
+    padding: 14px 6px;
+  }
+  .stage.active { transform: scale(1) translateY(0); filter: none; }
+  .stage:not(.active) { cursor: grab; }
+  .track.dragging .stage { cursor: grabbing; }
+  .stage.active:hover { transform: scale(1.04) translateY(-4px); }
+  .stage.active:hover .frame { filter: brightness(1.06) saturate(1.05); }
+
+  .frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 380px;
+    padding: 24px;
+    border-radius: 6px;
+    transition: filter 0.35s;
+  }
+  .window {
+    position: relative;
+    width: 100%; height: 100%;
+    background: #faf6ec;
+    border-radius: 3px;
+    padding: 14px;
+    overflow: hidden;
+    box-shadow:
+      inset 0 0 0 1px rgba(0,0,0,0.08),
+      inset 0 4px 14px rgba(0,0,0,0.12);
+  }
+
+  /* Wood (Farm) */
+  .stage-wood .frame {
+    background: #a86f3c;
+    border: 1px solid #4a371f;
+    box-shadow:
+      0 22px 40px -18px rgba(60, 40, 20, 0.55),
+      inset 0 0 0 6px #7a4f28,
+      inset 0 0 0 7px #efd9a8;
+  }
+  /* Marble (Colored Squares) */
+  .stage-marble .frame {
+    background: #ece6d6;
+    border: 1px solid #a59c83;
+    box-shadow:
+      0 22px 40px -18px rgba(40, 40, 50, 0.4),
+      inset 0 0 0 6px #d8d2c2,
+      inset 0 0 0 7px #6e6750;
+  }
+  /* Navy (Mystery) */
+  .stage-navy .frame {
+    background: #1a365d;
+    border: 1px solid #0a1530;
+    box-shadow:
+      0 22px 40px -18px rgba(20, 30, 60, 0.6),
+      inset 0 0 0 6px #0e1f3a,
+      inset 0 0 0 7px #d4a017;
+  }
+  .stage-navy .window {
+    background: rgba(255,255,255,0.04);
+    box-shadow: inset 0 0 0 1px rgba(243,232,200,0.25);
+  }
+
+  .caption {
+    margin: 14px 0 4px;
+    font-style: italic;
+    font-size: 16px;
+    color: #d8cfb4;
+    text-align: center;
+    max-width: 320px;
+  }
+  .cta {
+    margin-top: 8px;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(20,18,14,0.85);
+    color: #f1ead4;
+    border: 1px solid rgba(241,234,212,0.25);
+    opacity: 0;
+    transition: opacity 0.3s, background 0.2s;
+  }
+  .stage.active .cta { opacity: 0.92; }
+  .stage.active:hover .cta { opacity: 1; background: rgba(40,36,28,1); }
+
+  /* ---------- Previews ---------- */
+  .farm-mini {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 4px;
+    background: linear-gradient(135deg, #b08755, #8a6a3f);
+    padding: 6px;
+    border-radius: 4px;
+    width: 100%; height: 100%;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.18);
+  }
+  .farm-mini-cell {
+    background: #f4ecd0;
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .farm-mini-cell img {
+    width: 92%; height: 92%; object-fit: contain;
+    pointer-events: none; -webkit-user-drag: none;
+  }
+  .cs-mini {
+    width: 100%; height: 100%;
+    background: #c7c2dc;
+    display: flex; align-items: center; justify-content: center;
+    padding: 10px;
+    border-radius: 4px;
+  }
+  .cs-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 4px;
+    width: 100%; height: 100%;
+  }
+  .cs-tile {
+    border-radius: 5px;
+    box-shadow:
+      inset 0 -3px 6px rgba(0,0,0,0.18),
+      inset 0 3px 6px rgba(255,255,255,0.45),
+      0 1px 1px rgba(0,0,0,0.15);
+  }
+  .cs-tile.cs-R { background: radial-gradient(circle at 35% 25%, #ff7a6a, #d11d12 60%); }
+  .cs-tile.cs-Y { background: radial-gradient(circle at 35% 25%, #fff075, #f1c40f 60%); }
+  .cs-tile.cs-B { background: radial-gradient(circle at 35% 25%, #5fa0ff, #1a4ec2 60%); }
+  .mystery-mini {
+    width: 100%; height: 100%;
+    background: radial-gradient(circle at 30% 30%, #243a66, #0a1428 70%);
+    padding: 10px;
+    border-radius: 4px;
+  }
+
+  /* ---------- Tweaks bar ---------- */
+  .tweaks {
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-size: 12px;
+    color: #9b9180;
+    background: rgba(20,18,14,0.65);
+    padding: 8px 18px;
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+    z-index: 50;
+  }
+  .tweaks label { display: flex; align-items: center; gap: 8px; }
+  .tweaks input[type=range] { accent-color: #d4a017; width: 100px; }
+  .tweaks .val {
+    font-variant-numeric: tabular-nums;
+    color: #d8cfb4; min-width: 28px;
+  }
+
+  /* ---------- Threshold (frame expand) ---------- */
+  .threshold {
+    position: fixed; inset: 0;
+    z-index: 200;
+  }
+  .threshold-dim {
+    position: absolute; inset: 0;
+    background: rgba(20, 16, 8, 0);
+    transition: background var(--ms, 900ms) ease;
+  }
+  .threshold.open .threshold-dim { background: rgba(20, 16, 8, 0.75); }
+  .threshold-frame {
+    position: absolute;
+    transition: all var(--ms, 900ms) cubic-bezier(.55,.05,.25,1);
+    padding: 24px;
+    border-radius: 6px;
+  }
+  .threshold-frame.stage-wood {
+    background: #a86f3c;
+    border: 1px solid #4a371f;
+    box-shadow:
+      0 22px 40px -18px rgba(60, 40, 20, 0.55),
+      inset 0 0 0 6px #7a4f28,
+      inset 0 0 0 7px #efd9a8;
+  }
+  .threshold-frame.stage-marble {
+    background: #ece6d6;
+    border: 1px solid #a59c83;
+    box-shadow:
+      0 22px 40px -18px rgba(40, 40, 50, 0.4),
+      inset 0 0 0 6px #d8d2c2,
+      inset 0 0 0 7px #6e6750;
+  }
+  .threshold-frame.stage-navy {
+    background: #1a365d;
+    border: 1px solid #0a1530;
+    box-shadow:
+      0 22px 40px -18px rgba(20, 30, 60, 0.6),
+      inset 0 0 0 6px #0e1f3a,
+      inset 0 0 0 7px #d4a017;
+  }
+  .threshold-frame .window {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 12px;
+    padding: 32px;
+    color: #1a365d;
+  }
+  .threshold-frame.stage-navy .window { color: #f1ead4; }
+
+  .foyer-title {
+    font-size: clamp(36px, 6vw, 64px);
+    margin: 0;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s ease 0.4s, transform 0.5s ease 0.4s;
+  }
+  .foyer-sub {
+    font-style: italic;
+    font-size: 18px;
+    margin: 0;
+    opacity: 0;
+    transition: opacity 0.5s ease 0.55s;
+  }
+  .threshold.open .foyer-title { opacity: 1; transform: none; }
+  .threshold.open .foyer-sub { opacity: 0.85; }
+  .close-btn {
+    margin-top: 12px;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: rgba(20,18,14,0.85);
+    color: #f1ead4;
+    border: 1px solid rgba(241,234,212,0.3);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.5s ease 0.7s;
+  }
+  .threshold.open .close-btn { opacity: 1; }
+  .close-btn:hover { background: rgba(40,36,28,1); }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Carousel — three framed stages</h1>
+    <div class="label">
+      <span class="step-mark">↞</span>
+      <span>push to glide · click the centered card</span>
+      <span class="step-mark">↠</span>
+    </div>
+  </header>
+
+  <div class="carousel-wrap">
+    <div class="track" id="track">
+      <div class="track-inner" id="inner"></div>
+    </div>
+    <div class="controls">
+      <button class="arrow" id="prev" aria-label="Previous">‹</button>
+      <div class="dots" id="dots"></div>
+      <button class="arrow" id="next" aria-label="Next">›</button>
+    </div>
+  </div>
+
+  <div class="tweaks">
+    <label>tilt <input type="range" id="drum" min="0" max="45" step="1" value="45"><span class="val" id="drumV">45°</span></label>
+    <label>spacing <input type="range" id="peek" min="0" max="45" step="1" value="45"><span class="val" id="peekV">45%</span></label>
+    <label>glide <input type="range" id="glide" min="200" max="2000" step="50" value="2000"><span class="val" id="glideV">2000ms</span></label>
+  </div>
+
+<script>
+  const STAGES = [
+    { kind: 'wood',   title: 'The Farm',         prompt: 'Can you keep the rabbits away from the foxes?', sub: 'Welcome inside.' },
+    { kind: 'marble', title: 'Colored Squares',  prompt: 'A small grid that wants something beside it.',  sub: 'A small piece of the larger room.' },
+    { kind: 'navy',   title: 'Logical Shapes',   prompt: 'Opening soon.',                                  sub: 'Coming soon.' },
+  ];
+
+  let tweaks = { drum: 45, neighborPeek: 45, glideMs: 2000 };
+
+  /* Derive a critically-damped spring from the desired glide time.
+     For the discrete spring x_{n+1}=x_n+v_n, v_{n+1}=d*v_n+k*(T-x_n)
+     with critical damping d=(1-sqrt(k))², the 95% settle time is
+     ~4.7/sqrt(k) frames. Solve for k. */
+  function springFromMs(ms) {
+    const frames = Math.max(8, ms / 16.67);
+    const stiff = (4.7 / frames) ** 2;
+    return { stiff, damp: (1 - Math.sqrt(stiff)) ** 2 };
+  }
+  let focusIndex = 0;
+  let position = 0;                       /* px offset; positive = scrolled right */
+  const layout = { slotW: 540, sidePad: 0 };
+  const animRef = { raf: 0 };
+  const drag = { active: false, startX: 0, lastX: 0, startPos: 0, moved: 0, lastT: 0, vel: 0, downSlot: -1 };
+
+  const track = document.getElementById('track');
+  const inner = document.getElementById('inner');
+  const dotsEl = document.getElementById('dots');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+
+  function setPosition(p) {
+    position = p;
+    inner.style.transform = `translateX(${-p}px)`;
+  }
+
+  function previewHTML(kind) {
+    if (kind === 'wood') {
+      const cells = ['rabbit','fox','rabbit','farmer','farmer','fox','rabbit','farmer','fox'];
+      return `<div class="farm-mini">${cells.map(c =>
+        `<div class="farm-mini-cell"><img src="${c}.jpg" alt="" draggable="false"></div>`).join('')}</div>`;
+    }
+    if (kind === 'marble') {
+      const palette = ['Y','Y','R','Y','Y','B','Y','R','B','Y','B','R','Y','R','B','Y'];
+      return `<div class="cs-mini"><div class="cs-mini-grid">${
+        palette.map(c => `<div class="cs-tile cs-${c}"></div>`).join('')
+      }</div></div>`;
+    }
+    return `<div class="mystery-mini"><svg viewBox="0 0 120 120" width="100%" height="100%">
+      <rect x="6" y="6" width="108" height="108" fill="none" stroke="#f3e8c8" stroke-width="2"/>
+      <circle cx="40" cy="40" r="18" fill="none" stroke="#f3e8c8" stroke-width="2"/>
+      <circle cx="40" cy="40" r="6" fill="#d4a017"/>
+      <polygon points="80,28 96,58 64,58" fill="none" stroke="#f3e8c8" stroke-width="2"/>
+      <rect x="32" y="72" width="56" height="32" fill="none" stroke="#f3e8c8" stroke-width="2"/>
+      <circle cx="60" cy="88" r="10" fill="#c0392b"/>
+    </svg></div>`;
+  }
+
+  function buildSlots() {
+    inner.innerHTML = '';
+    dotsEl.innerHTML = '';
+    STAGES.forEach((s, i) => {
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.innerHTML = `
+        <div class="stage stage-${s.kind}${i === focusIndex ? ' active' : ''}">
+          <div class="frame">
+            <div class="window">${previewHTML(s.kind)}</div>
+          </div>
+          <p class="caption">${s.prompt}</p>
+          <span class="cta">step inside</span>
+        </div>
+      `;
+      inner.appendChild(slot);
+
+      const d = document.createElement('button');
+      d.type = 'button';
+      d.className = `dot${i === focusIndex ? ' on' : ''}`;
+      d.setAttribute('aria-label', `Go to ${s.title}`);
+      d.addEventListener('click', () => setFocus(i));
+      dotsEl.appendChild(d);
+    });
+  }
+
+  function recalc() {
+    const tw = track.clientWidth;
+    const slotW = Math.round(tw * (1 - tweaks.neighborPeek / 100));
+    const sidePad = Math.round((tw - slotW) / 2);
+    track.style.setProperty('--slot-w', slotW + 'px');
+    track.style.setProperty('--side-pad', sidePad + 'px');
+    layout.slotW = slotW;
+    layout.sidePad = sidePad;
+  }
+
+  function paint() {
+    const slots = track.querySelectorAll('.slot');
+    const slotW = layout.slotW || 1;
+    const sidePad = layout.sidePad || 0;
+    const center = position + track.clientWidth / 2;
+    const drum = tweaks.drum;
+    slots.forEach((el, i) => {
+      const slotCenter = sidePad + i * slotW + slotW / 2;
+      const rel = (slotCenter - center) / slotW;
+      if (Math.abs(rel) < 0.02) {
+        el.style.transform = 'none';
+        el.style.opacity = '1';
+        el.style.zIndex = '100';
+        return;
+      }
+      const clamped = Math.max(-1.4, Math.min(1.4, rel));
+      const eased = Math.sign(clamped) * Math.pow(Math.abs(clamped), 1.15);
+      const rotY = eased * drum;
+      const tz = -Math.abs(eased) * 60;
+      const opacity = Math.max(0.45, 1 - Math.abs(rel) * 0.25);
+      el.style.transform = `translateZ(${tz}px) rotateY(${rotY}deg)`;
+      el.style.opacity = String(opacity);
+      el.style.zIndex = String(100 - Math.round(Math.abs(rel) * 10));
+    });
+  }
+
+  function cancelAnim() {
+    if (animRef.raf) { cancelAnimationFrame(animRef.raf); animRef.raf = 0; }
+  }
+
+  function settleTo(index, initialVel = 0) {
+    cancelAnim();
+    const target = Math.max(0, Math.min(STAGES.length - 1, index)) * layout.slotW;
+    const { stiff, damp } = springFromMs(tweaks.glideMs);
+    let vel = initialVel;
+
+    const step = () => {
+      const dx = target - position;
+      vel = vel * damp + dx * stiff;
+      setPosition(position + vel);
+      paint();
+      if (Math.abs(dx) < 0.5 && Math.abs(vel) < 0.03) {
+        setPosition(target);
+        animRef.raf = 0;
+        paint();
+        return;
+      }
+      animRef.raf = requestAnimationFrame(step);
+    };
+    step();
+  }
+
+  function refreshActive() {
+    track.querySelectorAll('.stage').forEach((s, i) =>
+      s.classList.toggle('active', i === focusIndex));
+    dotsEl.querySelectorAll('.dot').forEach((d, i) =>
+      d.classList.toggle('on', i === focusIndex));
+  }
+
+  function setFocus(i) {
+    focusIndex = i;
+    refreshActive();
+    settleTo(i);
+  }
+
+  /* ---------- Pointer drag ---------- */
+  track.addEventListener('pointerdown', (e) => {
+    cancelAnim();
+    drag.active = true;
+    drag.startX = e.clientX;
+    drag.lastX = e.clientX;
+    drag.startPos = position;
+    drag.moved = 0;
+    drag.lastT = performance.now();
+    drag.vel = 0;
+    const slotEl = e.target.closest?.('.slot');
+    const slots = track.querySelectorAll('.slot');
+    drag.downSlot = slotEl ? Array.prototype.indexOf.call(slots, slotEl) : -1;
+    track.classList.add('dragging');
+    try { track.setPointerCapture(e.pointerId); } catch {}
+  });
+  track.addEventListener('pointermove', (e) => {
+    if (!drag.active) return;
+    const now = performance.now();
+    const dt = Math.max(1, now - drag.lastT);
+    const dx = e.clientX - drag.lastX;
+    drag.vel = 0.65 * drag.vel + 0.35 * (dx / dt);
+    drag.lastT = now;
+    drag.lastX = e.clientX;
+    const totalDx = e.clientX - drag.startX;
+    drag.moved = Math.max(drag.moved, Math.abs(totalDx));
+    setPosition(drag.startPos - totalDx);
+    paint();
+  });
+  function onEnd() {
+    if (!drag.active) return;
+    drag.active = false;
+    track.classList.remove('dragging');
+
+    /* Tap: barely moved → either focus a side card, or enter the centered one */
+    if (drag.moved <= 6 && drag.downSlot >= 0) {
+      const i = drag.downSlot;
+      if (i === focusIndex) enterStage(i);
+      else setFocus(i);
+      return;
+    }
+    /* Drag release: project where the band would coast under the current
+       spring (decay rate = 2*sqrt(k)-k for critical damping), snap to
+       nearest slot, then settleTo handles the smooth arrival. */
+    const initialVel = -drag.vel * 16;
+    const { stiff: k } = springFromMs(tweaks.glideMs);
+    const decay = Math.max(0.01, 2 * Math.sqrt(k) - k);
+    const projection = initialVel / decay;
+    const projected = position + projection;
+    const idx = Math.max(0, Math.min(STAGES.length - 1,
+      Math.round(projected / layout.slotW)));
+    focusIndex = idx;
+    refreshActive();
+    settleTo(idx, initialVel);
+  }
+  track.addEventListener('pointerup', onEnd);
+  track.addEventListener('pointercancel', onEnd);
+  track.addEventListener('pointerleave', onEnd);
+
+  /* Trackpad horizontal scroll */
+  let wheelTimer;
+  track.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaX) < 1) return;
+    cancelAnim();
+    setPosition(position + e.deltaX);
+    paint();
+    clearTimeout(wheelTimer);
+    wheelTimer = setTimeout(() => {
+      const idx = Math.max(0, Math.min(STAGES.length - 1,
+        Math.round(position / layout.slotW)));
+      focusIndex = idx;
+      refreshActive();
+      settleTo(idx);
+    }, 140);
+  });
+
+  prevBtn.addEventListener('click', () => setFocus(Math.max(0, focusIndex - 1)));
+  nextBtn.addEventListener('click', () => setFocus(Math.min(STAGES.length - 1, focusIndex + 1)));
+
+  /* ---------- Tweak controls ---------- */
+  document.getElementById('drum').addEventListener('input', (e) => {
+    tweaks.drum = Number(e.target.value);
+    document.getElementById('drumV').textContent = tweaks.drum + '°';
+    paint();
+  });
+  document.getElementById('peek').addEventListener('input', (e) => {
+    tweaks.neighborPeek = Number(e.target.value);
+    document.getElementById('peekV').textContent = tweaks.neighborPeek + '%';
+    recalc();
+    setPosition(focusIndex * layout.slotW);
+    paint();
+  });
+  document.getElementById('glide').addEventListener('input', (e) => {
+    tweaks.glideMs = Number(e.target.value);
+    document.getElementById('glideV').textContent = tweaks.glideMs + 'ms';
+  });
+
+  /* ---------- Threshold (frame expand) ---------- */
+  function enterStage(i) {
+    const stage = STAGES[i];
+    const slots = track.querySelectorAll('.slot');
+    const frame = slots[i]?.querySelector('.frame');
+    if (!frame) return;
+    const r = frame.getBoundingClientRect();
+    const ms = 900;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'threshold';
+    overlay.style.setProperty('--ms', ms + 'ms');
+    overlay.innerHTML = `
+      <div class="threshold-dim"></div>
+      <div class="threshold-frame stage-${stage.kind}"
+           style="left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;">
+        <div class="window">
+          <h1 class="foyer-title">${stage.title}</h1>
+          <p class="foyer-sub">${stage.sub}</p>
+          <button class="close-btn" type="button">close</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      overlay.classList.add('open');
+      const f = overlay.querySelector('.threshold-frame');
+      f.style.left = '0';
+      f.style.top = '0';
+      f.style.width = '100vw';
+      f.style.height = '100vh';
+      f.style.borderRadius = '0';
+    }));
+
+    const close = () => {
+      overlay.classList.remove('open');
+      const f = overlay.querySelector('.threshold-frame');
+      f.style.left = r.left + 'px';
+      f.style.top = r.top + 'px';
+      f.style.width = r.width + 'px';
+      f.style.height = r.height + 'px';
+      f.style.borderRadius = '6px';
+      setTimeout(() => overlay.remove(), ms);
+    };
+    overlay.querySelector('.close-btn').addEventListener('click', close);
+    overlay.querySelector('.threshold-dim').addEventListener('click', close);
+  }
+
+  /* ---------- Boot ---------- */
+  buildSlots();
+  requestAnimationFrame(() => {
+    recalc();
+    setPosition(focusIndex * layout.slotW);
+    paint();
+  });
+  window.addEventListener('resize', () => {
+    recalc();
+    setPosition(focusIndex * layout.slotW);
+    paint();
+  });
+</script>
+</body>
+</html>
