@@ -65,21 +65,27 @@ h1.title { color: #eee; font-size: 28px; font-weight: 800; letter-spacing: 8px; 
 .solved-banner { background: linear-gradient(135deg, rgba(46,213,115,0.15), rgba(46,213,115,0.05)); border: 1px solid rgba(46,213,115,0.3); border-radius: 10px; padding: 10px 24px; margin-bottom: 16px; color: #2ed573; font-size: 16px; font-weight: 800; letter-spacing: 6px; display: none; gap: 10px; align-items: center; }
 .solved-banner.show { display: flex; }
 
-/* Solve celebration: a confetti burst — keeps the puzzle visible */
-@keyframes confetti-fall {
-  0%   { transform: translateY(-20vh) rotate(0deg);   opacity: 1; }
-  90%  { opacity: 1; }
-  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+/* Solve celebration: the puzzle itself lights up.
+   Persistent halo on the grid while solved, plus a one-time cascade pulse
+   through each tile. The puzzle stays fully visible the whole time. */
+.grid { transition: box-shadow 0.6s ease, filter 0.6s ease; }
+.grid.is-solved {
+  box-shadow:
+    0 0 0 3px rgba(255, 215, 100, 0.8),
+    0 0 40px 8px rgba(255, 215, 100, 0.45),
+    0 0 120px 24px rgba(46, 213, 115, 0.25);
+  filter: drop-shadow(0 0 6px rgba(255, 215, 100, 0.55));
 }
-.confetti-piece {
-  position: fixed;
-  top: 0;
-  width: 10px; height: 16px;
-  pointer-events: none;
-  z-index: 4000;
-  border-radius: 2px;
-  will-change: transform, opacity;
-  animation: confetti-fall linear forwards;
+.tile.lit { animation: tile-lit 0.75s ease-out; }
+@keyframes tile-lit {
+  0%   { filter: brightness(1); transform: scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.18); }
+  30%  {
+    filter: brightness(1.55) saturate(1.2)
+            drop-shadow(0 0 14px rgba(255, 230, 140, 0.95));
+    transform: scale(1.08);
+    box-shadow: 0 0 18px 4px rgba(255, 230, 140, 0.7), 0 2px 8px rgba(0,0,0,0.18);
+  }
+  100% { filter: brightness(1); transform: scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.18); }
 }
 
 /* Make the auto-shown SOLVED banner pop briefly when it first appears */
@@ -499,33 +505,26 @@ function renderCheck() {
     });
   }
 
-  /* Confetti burst on transition from unsolved → solved.
-     Leaves the puzzle visible the whole time. */
-  if (solved && !wasSolved) spawnConfetti();
+  /* Persistent halo on the grid while solved; cascade pulse on transition. */
+  const grid = document.getElementById('grid');
+  grid.classList.toggle('is-solved', solved);
+  if (solved && !wasSolved) cascadeLight();
   wasSolved = solved;
 }
 
 let wasSolved = false;
 
-function spawnConfetti() {
-  const colors = ['#ff4757', '#ffd03b', '#3b82f6', '#2ed573', '#a55eea', '#ffffff'];
-  const count = 70;
-  for (let i = 0; i < count; i++) {
-    const piece = document.createElement('div');
-    piece.className = 'confetti-piece';
-    piece.style.left = (Math.random() * 100) + 'vw';
-    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-    piece.style.animationDelay = (Math.random() * 0.4) + 's';
-    piece.style.animationDuration = (3 + Math.random() * 1.5) + 's';
-    /* mix of tall rectangles and small squares for variety */
-    if (Math.random() < 0.3) {
-      piece.style.width = '8px';
-      piece.style.height = '8px';
-      piece.style.borderRadius = '50%';
-    }
-    document.body.appendChild(piece);
-    setTimeout(() => piece.remove(), 5500);
-  }
+/* Walk through tiles in reading order (top-left → bottom-right), briefly
+   "lighting" each one with a glow + scale bump. Stagger ~55ms apart so the
+   wave reads as a sweep, not a random sparkle. */
+function cascadeLight() {
+  const tileEls = document.querySelectorAll('#grid .tile');
+  tileEls.forEach((tile, i) => {
+    setTimeout(() => {
+      tile.classList.add('lit');
+      setTimeout(() => tile.classList.remove('lit'), 750);
+    }, i * 55);
+  });
 }
 
 function renderAll() { renderCounts(); renderRules(); renderGrid(); renderCheck(); }
