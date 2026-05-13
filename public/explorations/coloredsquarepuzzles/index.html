@@ -62,7 +62,29 @@ h1.title { color: #eee; font-size: 28px; font-weight: 800; letter-spacing: 8px; 
 .add-rule-btn { align-self: flex-start; padding: 6px 14px; border-radius: 6px; border: 1px dashed #ccc; background: transparent; color: #888; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 4px; }
 
 /* ===== SOLVED ===== */
-.solved-banner { background: linear-gradient(135deg, rgba(46,213,115,0.15), rgba(46,213,115,0.05)); border: 1px solid rgba(46,213,115,0.3); border-radius: 10px; padding: 10px 24px; margin-bottom: 16px; color: #2ed573; font-size: 16px; font-weight: 800; letter-spacing: 6px; display: none; gap: 10px; align-items: center; }
+.solved-banner {
+  position: fixed;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, rgba(46,213,115,0.96), rgba(30,156,80,0.96));
+  border: 1px solid rgba(255,215,100,0.45);
+  border-radius: 16px;
+  padding: 16px 44px;
+  margin: 0;
+  color: #fff;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 12px;
+  display: none;
+  gap: 16px;
+  align-items: center;
+  z-index: 100;
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.4),
+    0 0 60px rgba(46,213,115,0.45);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
 .solved-banner.show { display: flex; }
 
 /* Solve celebration: the puzzle itself lights up.
@@ -232,7 +254,7 @@ body.edit-mode #edit-badge { display: block; }
     <div style="height:60px"></div>
     <!-- Solved Banner -->
     <div id="solved-banner" class="solved-banner">
-      <span style="font-size:14px">✦</span> SOLVED <span style="font-size:14px">✦</span>
+      <span style="font-size:26px">✦</span> SOLVED <span style="font-size:26px">✦</span>
     </div>
     <!-- Grid -->
     <div id="grid" class="grid"></div>
@@ -505,14 +527,24 @@ function renderCheck() {
     });
   }
 
-  /* Persistent halo on the grid while solved; cascade pulse on transition. */
+  /* Halo + cascade fire on transition from unsolved → solved.
+     Halo auto-dismisses after 7s; the existing CSS transition fades it out
+     smoothly. If the user unsolves before then, halo is removed immediately. */
   const grid = document.getElementById('grid');
-  grid.classList.toggle('is-solved', solved);
-  if (solved && !wasSolved) cascadeLight();
+  if (solved && !wasSolved) {
+    grid.classList.add('is-solved');
+    cascadeLight();
+    clearTimeout(haloTimer);
+    haloTimer = setTimeout(() => grid.classList.remove('is-solved'), 7000);
+  } else if (!solved) {
+    grid.classList.remove('is-solved');
+    clearTimeout(haloTimer);
+  }
   wasSolved = solved;
 }
 
 let wasSolved = false;
+let haloTimer = null;
 
 /* Walk through tiles in reading order (top-left → bottom-right), briefly
    "lighting" each one with a glow + scale bump. Stagger ~55ms apart so the
