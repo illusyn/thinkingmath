@@ -63,29 +63,28 @@ h1.title { color: #eee; font-size: 28px; font-weight: 800; letter-spacing: 8px; 
 
 /* ===== SOLVED ===== */
 .solved-banner {
-  position: fixed;
-  top: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, rgba(46,213,115,0.96), rgba(30,156,80,0.96));
-  border: 1px solid rgba(255,215,100,0.45);
+  /* In normal flow inside #app-right so it stays centered above the puzzle */
+  margin: 0 auto 14px;
+  background: linear-gradient(135deg, rgba(255, 159, 64, 0.96), rgba(230, 110, 30, 0.96));
+  border: 1px solid rgba(255, 230, 140, 0.6);
   border-radius: 16px;
-  padding: 16px 44px;
-  margin: 0;
+  padding: 14px 36px;
   color: #fff;
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 800;
-  letter-spacing: 12px;
-  display: none;
-  gap: 16px;
+  letter-spacing: 10px;
+  display: flex;
+  gap: 14px;
   align-items: center;
-  z-index: 100;
   box-shadow:
-    0 10px 30px rgba(0,0,0,0.4),
-    0 0 60px rgba(46,213,115,0.45);
+    0 8px 24px rgba(0,0,0,0.3),
+    0 0 50px rgba(255, 159, 64, 0.5);
   text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
 }
-.solved-banner.show { display: flex; }
+.solved-banner.show { opacity: 1; pointer-events: auto; }
 
 /* Solve celebration: the puzzle itself lights up.
    Persistent halo on the grid while solved, plus a one-time cascade pulse
@@ -501,11 +500,8 @@ function renderGrid() {
 
 function renderCheck() {
   const banner = document.getElementById('solved-banner');
+  const grid = document.getElementById('grid');
   const solved = isSolution();
-
-  /* Inline SOLVED banner now shows automatically whenever the puzzle is
-     solved — no longer gated on the user pressing the Check button. */
-  banner.classList.toggle('show', solved);
 
   /* Per-tile pass/fail outlines and ✓/✕ marks: only when checking mode is on */
   if (!checking) {
@@ -527,17 +523,22 @@ function renderCheck() {
     });
   }
 
-  /* Halo + cascade fire on transition from unsolved → solved.
-     Halo auto-dismisses after 7s; the existing CSS transition fades it out
-     smoothly. If the user unsolves before then, halo is removed immediately. */
-  const grid = document.getElementById('grid');
+  /* On the unsolved→solved transition: show banner, halo, and cascade.
+     Both banner and halo auto-fade after 7s. If the user unsolves before
+     then, they clear immediately. While still solved (no transition), we
+     don't re-show — the timers handle the fade naturally. */
   if (solved && !wasSolved) {
+    banner.classList.add('show');
     grid.classList.add('is-solved');
     cascadeLight();
+    clearTimeout(bannerTimer);
     clearTimeout(haloTimer);
-    haloTimer = setTimeout(() => grid.classList.remove('is-solved'), 7000);
+    bannerTimer = setTimeout(() => banner.classList.remove('show'), 7000);
+    haloTimer   = setTimeout(() => grid.classList.remove('is-solved'), 7000);
   } else if (!solved) {
+    banner.classList.remove('show');
     grid.classList.remove('is-solved');
+    clearTimeout(bannerTimer);
     clearTimeout(haloTimer);
   }
   wasSolved = solved;
@@ -545,6 +546,7 @@ function renderCheck() {
 
 let wasSolved = false;
 let haloTimer = null;
+let bannerTimer = null;
 
 /* Walk through tiles in reading order (top-left → bottom-right), briefly
    "lighting" each one with a glow + scale bump. Stagger ~55ms apart so the
