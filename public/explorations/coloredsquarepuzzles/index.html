@@ -65,49 +65,31 @@ h1.title { color: #eee; font-size: 28px; font-weight: 800; letter-spacing: 8px; 
 .solved-banner { background: linear-gradient(135deg, rgba(46,213,115,0.15), rgba(46,213,115,0.05)); border: 1px solid rgba(46,213,115,0.3); border-radius: 10px; padding: 10px 24px; margin-bottom: 16px; color: #2ed573; font-size: 16px; font-weight: 800; letter-spacing: 6px; display: none; gap: 10px; align-items: center; }
 .solved-banner.show { display: flex; }
 
-/* Celebration overlay — auto-fires when the puzzle becomes solved */
-.solve-celebration {
-  position: fixed; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(0, 0, 0, 0.55);
-  z-index: 3000;
-  opacity: 0;
+/* Solve celebration: a confetti burst — keeps the puzzle visible */
+@keyframes confetti-fall {
+  0%   { transform: translateY(-20vh) rotate(0deg);   opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+.confetti-piece {
+  position: fixed;
+  top: 0;
+  width: 10px; height: 16px;
   pointer-events: none;
-  transition: opacity 0.35s ease;
-  cursor: pointer;
-  backdrop-filter: blur(4px);
+  z-index: 4000;
+  border-radius: 2px;
+  will-change: transform, opacity;
+  animation: confetti-fall linear forwards;
 }
-.solve-celebration.show { opacity: 1; pointer-events: auto; }
-.solve-celebration-card {
-  background: linear-gradient(135deg, #2ed573, #1e9c50);
-  color: #fff;
-  padding: 40px 64px;
-  border-radius: 22px;
-  text-align: center;
-  box-shadow:
-    0 20px 60px rgba(0,0,0,0.45),
-    0 0 80px rgba(46,213,115,0.45);
-  transform: scale(0.85);
-  transition: transform 0.45s cubic-bezier(.2,.7,.2,1);
+
+/* Make the auto-shown SOLVED banner pop briefly when it first appears */
+.solved-banner.show {
+  animation: banner-pop 0.5s cubic-bezier(.2,.7,.2,1);
 }
-.solve-celebration.show .solve-celebration-card { transform: scale(1); }
-.solve-celebration-check {
-  font-size: 84px;
-  line-height: 1;
-  margin-bottom: 10px;
-  text-shadow: 0 3px 12px rgba(0,0,0,0.25);
-}
-.solve-celebration-title {
-  font-size: 38px;
-  font-weight: 800;
-  letter-spacing: 10px;
-  margin: 4px 0 8px;
-}
-.solve-celebration-sub {
-  font-size: 12px;
-  letter-spacing: 4px;
-  opacity: 0.85;
-  text-transform: uppercase;
+@keyframes banner-pop {
+  0%   { transform: scale(0.7); opacity: 0; }
+  60%  { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 /* ===== GRID ===== */
@@ -262,15 +244,6 @@ body.edit-mode #edit-badge { display: block; }
     </div>
   </div>
 
-</div>
-
-<!-- Solve Celebration -->
-<div id="solve-celebration" class="solve-celebration" onclick="hideSolveCelebration()">
-  <div class="solve-celebration-card">
-    <div class="solve-celebration-check">✓</div>
-    <div class="solve-celebration-title">SOLVED</div>
-    <div class="solve-celebration-sub">tap anywhere to continue</div>
-  </div>
 </div>
 
 <!-- Save Modal -->
@@ -500,41 +473,59 @@ function renderGrid() {
 
 function renderCheck() {
   const banner = document.getElementById('solved-banner');
-  /* fire the celebration overlay whenever the puzzle becomes solved,
-     regardless of whether the user has pressed the Check button */
-  maybeCelebrate();
+  const solved = isSolution();
+
+  /* Inline SOLVED banner now shows automatically whenever the puzzle is
+     solved — no longer gated on the user pressing the Check button. */
+  banner.classList.toggle('show', solved);
+
+  /* Per-tile pass/fail outlines and ✓/✕ marks: only when checking mode is on */
   if (!checking) {
-    banner.classList.remove('show');
     tiles.forEach((_,i) => {
       const el = document.querySelector(`.tile[data-idx="${i}"]`);
-      if (el) { el.style.borderColor = 'transparent'; const m = document.getElementById(`mark-${i}`); if(m) m.style.display='none'; }
+      if (el) {
+        el.style.borderColor = 'transparent';
+        const m = document.getElementById(`mark-${i}`);
+        if (m) m.style.display = 'none';
+      }
     });
-    return;
+  } else {
+    tiles.forEach((_,i) => {
+      const pass = checkTile(i);
+      const el = document.querySelector(`.tile[data-idx="${i}"]`);
+      const m = document.getElementById(`mark-${i}`);
+      if (el) el.style.borderColor = pass ? 'rgba(46,213,115,0.85)' : 'rgba(255,71,87,0.85)';
+      if (m) { m.textContent = pass ? '✓' : '✕'; m.style.display = 'block'; }
+    });
   }
-  let allPass = true;
-  tiles.forEach((_,i) => {
-    const pass = checkTile(i);
-    if (!pass) allPass = false;
-    const el = document.querySelector(`.tile[data-idx="${i}"]`);
-    const m = document.getElementById(`mark-${i}`);
-    if (el) el.style.borderColor = pass ? 'rgba(46,213,115,0.85)' : 'rgba(255,71,87,0.85)';
-    if (m) { m.textContent = pass ? '✓' : '✕'; m.style.display = 'block'; }
-  });
-  banner.classList.toggle('show', allPass);
+
+  /* Confetti burst on transition from unsolved → solved.
+     Leaves the puzzle visible the whole time. */
+  if (solved && !wasSolved) spawnConfetti();
+  wasSolved = solved;
 }
 
-/* Track solve state for the celebration overlay — fire only on false→true */
 let wasSolved = false;
-function showSolveCelebration() {
-  document.getElementById('solve-celebration').classList.add('show');
-}
-function hideSolveCelebration() {
-  document.getElementById('solve-celebration').classList.remove('show');
-}
-function maybeCelebrate() {
-  const solved = isSolution();
-  if (solved && !wasSolved) showSolveCelebration();
-  wasSolved = solved;
+
+function spawnConfetti() {
+  const colors = ['#ff4757', '#ffd03b', '#3b82f6', '#2ed573', '#a55eea', '#ffffff'];
+  const count = 70;
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = (Math.random() * 100) + 'vw';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDelay = (Math.random() * 0.4) + 's';
+    piece.style.animationDuration = (3 + Math.random() * 1.5) + 's';
+    /* mix of tall rectangles and small squares for variety */
+    if (Math.random() < 0.3) {
+      piece.style.width = '8px';
+      piece.style.height = '8px';
+      piece.style.borderRadius = '50%';
+    }
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 5500);
+  }
 }
 
 function renderAll() { renderCounts(); renderRules(); renderGrid(); renderCheck(); }
